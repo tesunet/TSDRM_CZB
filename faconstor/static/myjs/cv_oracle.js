@@ -84,7 +84,7 @@ if (App.isAngularJsApp() === false) {
                     $("table#group_data tbody").empty();
 
                     $("#current_process").text(data.process_name);
-                    $("#summary").text("为了提高防范灾难风险的能力，保证业务连续性要求，在公司总经理室高度重视下，嘉兴银行成立灾备演练项目组，于time进行核心系统Oracle数据库恢复，并取得圆满成功。演练具体情况报告如下。".replace("time", data.processrun_time));
+                    $("#summary").text("为了提高防范灾难风险的能力，保证业务连续性要求，在公司总经理室高度重视下，上海特速成立灾备演练项目组，于time进行核心系统Oracle数据库恢复，并取得圆满成功。演练具体情况报告如下。".replace("time", data.processrun_time));
 
                     var elements = "";
                     for (var i = 0; i < data.step_info_list.length; i++) {

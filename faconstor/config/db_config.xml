@@ -1,4 +1,6 @@
 <?xml version="1.0" ?>
 <CONFIG>
-    <DB_CONFIG db_host="127.0.0.1" db_name="jx_tesudrm" db_user="root" db_password="password"/>
+    <DB_CONFIG db_host="127.0.0.1" db_name="tesudrm_czb" db_user="root" db_password="password"/>
 </CONFIG>
+
+
