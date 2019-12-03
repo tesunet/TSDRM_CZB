@@ -1,4 +1,4 @@
-$(document).ready(function () {
+﻿$(document).ready(function () {
     $("#target").val("");
     var copy_priority_hidden = $("#copy_priority_hidden").val();
     $("#copy_priority").val(copy_priority_hidden);
@@ -111,15 +111,6 @@ $(document).ready(function () {
                     run_person: $("#run_person").val(),
                     run_time: $("#run_time").val(),
                     run_reason: $("#run_reason").val(),
-
-                    target: $("#target").val(),
-                    recovery_time: $("#recovery_time").val(),
-                    browseJobId: $("#browseJobId").val(),
-                    data_path: $("#data_path").val(),
-
-                    origin: $("#origin").val(),
-                    copy_priority: $("#copy_priority").val(),
-                    db_open: $("#db_open").val(),
                 },
             success: function (data) {
                 if (data["res"] == "新增成功。") {

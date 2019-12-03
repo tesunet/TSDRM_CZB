@@ -3815,39 +3815,11 @@ def cv_oracle_run(request):
         run_time = request.POST.get('run_time', '')
         run_reason = request.POST.get('run_reason', '')
 
-        target = request.POST.get('target', '')
-        recovery_time = request.POST.get('recovery_time', '')
-        browseJobId = request.POST.get('browseJobId', '')
-        data_path = request.POST.get('data_path', '')
-        copy_priority = request.POST.get('copy_priority', '')
-        db_open = request.POST.get('db_open', '')
-
-        origin = request.POST.get('origin', '')
-
-        try:
-            copy_priority = int(copy_priority)
-        except ValueError as e:
-            copy_priority = 1
-        try:
-            db_open = int(db_open)
-        except ValueError as e:
-            db_open = 1
-
         try:
             processid = int(processid)
         except:
             return JsonResponse({"res": "当前流程不存在。"})
 
-        # if not data_path.strip():
-        #     return JsonResponse({"res": "数据文件重定向路径不能为空。"})
-
-        if not origin.strip():
-            return JsonResponse({"res": "流程步骤中未添加Commvault接口，导致源客户端未空。"})
-
-        try:
-            target = int(target)
-        except:
-            return JsonResponse({"res": "目标客户端未选择。"})
 
         process = Process.objects.filter(id=processid).exclude(state="9").filter(type="cv_oracle")
         if (len(process) <= 0):
@@ -3867,14 +3839,6 @@ def cv_oracle_run(request):
                     myprocessrun.creatuser = request.user.username
                     myprocessrun.run_reason = run_reason
                     myprocessrun.state = "RUN"
-                    myprocessrun.target_id = target
-                    myprocessrun.browse_job_id = browseJobId
-                    myprocessrun.data_path = data_path
-                    myprocessrun.copy_priority = copy_priority
-                    myprocessrun.db_open = db_open
-                    myprocessrun.origin = origin
-                    myprocessrun.recover_time = datetime.datetime.strptime(recovery_time,
-                                                                           "%Y-%m-%d %H:%M:%S") if recovery_time else None
 
                     myprocessrun.save()
                     mystep = process[0].step_set.exclude(state="9").order_by("sort")

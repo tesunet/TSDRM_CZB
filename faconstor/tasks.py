@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+﻿from __future__ import absolute_import
 from celery import shared_task
 import pymssql
 from faconstor.models import *
@@ -761,20 +761,6 @@ def exec_process(processrunid, if_repeat=False):
     end_step_tag = 0
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
-
-    # nextSCN-1
-    # 获取流程客户端
-
-    cur_client = processrun.origin
-    dm = SQLApi.CustomFilter(settings.sql_credit)
-    ret = dm.get_oracle_backup_job_list(cur_client)
-    curSCN = None
-    for i in ret:
-        if i["subclient"] == "default":
-            curSCN = i["cur_SCN"]
-            break
-    processrun.curSCN = curSCN
-    processrun.save()
 
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
     if len(steprunlist) > 0:

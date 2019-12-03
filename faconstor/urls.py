@@ -1,4 +1,4 @@
-from django.conf.urls import url
+﻿from django.conf.urls import url
 from faconstor.views import *
 from django.views.generic.base import RedirectView
 

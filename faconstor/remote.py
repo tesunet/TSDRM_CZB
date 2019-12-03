@@ -1,4 +1,4 @@
-"""
+﻿"""
 paramiko, pywinrm实现windows/linux脚本调用
 linux下脚本语法错误,或者命令不存在等没有通过stderr变量接收到，只能添加判断条件；
 windows下可以接收到错误信息并作出判断；
@@ -204,8 +204,12 @@ class ServerByPara(object):
     def run(self, succeedtext):
         if self.system_choice == "Linux":
             result = self.exec_linux_cmd(succeedtext)
+            if self.client:
+                self.client.close()
         elif self.system_choice == "AIX":
             result = self.exec_linux_cmd(succeedtext, port=22)
+            if self.client:
+                self.client.close()
         else:
             result = self.exec_win_cmd(succeedtext)
         print(result)
