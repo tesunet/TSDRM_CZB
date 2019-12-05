@@ -51,6 +51,7 @@ class Process(models.Model):
     url = models.CharField("页面链接", blank=True, max_length=100)
     type = models.CharField("预案类型", blank=True, max_length=100, null=True)
     color = models.CharField("颜色", blank=True, max_length=50)
+    config = models.TextField("XML格式存放系统/数据库预置信息", blank=True, null=True)
 
 
 class Step(models.Model):

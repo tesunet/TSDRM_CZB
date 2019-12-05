@@ -3512,6 +3512,18 @@ def process_data(request):
         all_process = Process.objects.exclude(state="9").filter(type="cv_oracle").order_by("sort").values()
         if (len(all_process) > 0):
             for process in all_process:
+                system, database, redirect_path, pre_increasement = "", "", "", ""
+                try:
+                    config = etree.XML(process["config"])
+                    el = config.xpath("//config")
+                    if el:
+                        el = el[0]
+                        system = el.attrib.get("system", "")
+                        database = el.attrib.get("database", "")
+                        redirect_path = el.attrib.get("redirect_path", "")
+                        pre_increasement = el.attrib.get("pre_increasement", "")
+                except Exception as e:
+                    print(e)
                 result.append({
                     "process_id": process["id"],
                     "process_code": process["code"],
@@ -3521,7 +3533,11 @@ def process_data(request):
                     "process_rto": process["rto"],
                     "process_rpo": process["rpo"],
                     "process_sort": process["sort"],
-                    "process_color": process["color"],
+                    "system": system,
+                    "database": database,
+                    "redirect_path": redirect_path,
+                    "pre_increasement": pre_increasement,
+                    # "process_color": process["color"],
                 })
         return JsonResponse({"data": result})
 
@@ -3539,6 +3555,12 @@ def process_save(request):
             rpo = request.POST.get('rpo', '')
             sort = request.POST.get('sort', '')
             color = request.POST.get('color', '')
+
+            system = request.POST.get('system', '')
+            database = request.POST.get('database', '')
+            redirect_path = request.POST.get('redirect_path', '')
+            pre_increasement = request.POST.get('pre_increasement', '')
+
             try:
                 id = int(id)
             except:
@@ -3552,9 +3574,15 @@ def process_save(request):
                     if sign.strip() == '':
                         result["res"] = '是否签到不能为空。'
                     else:
-                        # if color.strip() == "":
-                        #     result["res"] = '项目图标配色不能为空。'
-                        # else:
+                        # 构造系统/数据库预置信息xml
+                        root = etree.Element("root")
+                        system_node = etree.SubElement(root, "config")
+                        system_node.attrib["system"] = system
+                        system_node.attrib["database"] = database
+                        system_node.attrib["redirect_path"] = redirect_path
+                        system_node.attrib["pre_increasement"] = pre_increasement if database == "db2" else ""
+                        config = etree.tostring(root)
+
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
                                 state="9").filter(type="cv_oracle")
@@ -3572,6 +3600,7 @@ def process_save(request):
                                 processsave.rpo = rpo if rpo else None
                                 processsave.sort = sort if sort else None
                                 processsave.color = color
+                                processsave.config = config
                                 processsave.save()
                                 result["res"] = "保存成功。"
                                 result["data"] = processsave.id
@@ -3591,6 +3620,7 @@ def process_save(request):
                                     processsave.rpo = rpo if rpo else None
                                     processsave.sort = sort if sort else None
                                     processsave.color = color
+                                    processsave.config = config
                                     processsave.save()
                                     result["res"] = "保存成功。"
                                     result["data"] = processsave.id

@@ -35,7 +35,7 @@
             <th> RTO</th>
             <th> RPO</th>
             <th> 排序</th>
-            <th> 颜色</th>
+            <!-- <th> 颜色</th> -->
             <th style="width:50px;"> 操作</th>
         </tr>
         </thead>
@@ -103,13 +103,47 @@
 
 
                             <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>系统</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="system" name="system">
+                                        <option value="Linux">Linux</option>
+                                        <option value="AIX">AIX</option>
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>数据库</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="database" name="database">
+                                        <option value="Oracle">Oracle</option>
+                                        <option value="db2">db2</option>
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="redirect_path_div">
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>重定向路径</label>
+                                <div class="col-md-10">
+                                    <input id="redirect_path" type="text" name="redirect_path" class="form-control" placeholder="">
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="pre_increasement_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>预设增量</label>
+                                <div class="col-md-10">
+                                    <input id="pre_increasement" type="number" name="pre_increasement" class="form-control" placeholder="">
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>RTO</label>
                                 <div class="col-md-10">
                                     <input id="rto" type="number" name="rto" class="form-control"
                                            placeholder="">
                                     <div class="form-control-focus"></div>
-
                                 </div>
                             </div>
 
@@ -133,7 +167,7 @@
 
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <!-- <div class="form-group">
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>图表颜色</label>
                                 <div class="col-md-10">
@@ -142,7 +176,7 @@
                                     <div class="form-control-focus"></div>
 
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                         <div class="form-actions ">
                             <div class="modal-footer">

@@ -5,16 +5,16 @@ $(document).ready(function () {
         "bProcessing": true,
         "ajax": "../process_data/",
         "columns": [
-            {"data": "process_id"},
-            {"data": "process_code"},
-            {"data": "process_name"},
-            {"data": "process_remark"},
-            {"data": "process_sign"},
-            {"data": "process_rto"},
-            {"data": "process_rpo"},
-            {"data": "process_sort"},
-            {"data": "process_color"},
-            {"data": null}
+            { "data": "process_id" },
+            { "data": "process_code" },
+            { "data": "process_name" },
+            { "data": "process_remark" },
+            { "data": "process_sign" },
+            { "data": "process_rto" },
+            { "data": "process_rpo" },
+            { "data": "process_sort" },
+            // { "data": "process_color" },
+            { "data": null }
         ],
 
         "columnDefs": [{
@@ -63,9 +63,9 @@ $(document).ready(function () {
                 type: "POST",
                 url: "../process_del/",
                 data:
-                    {
-                        id: data.process_id,
-                    },
+                {
+                    id: data.process_id,
+                },
                 success: function (data) {
                     if (data == 1) {
                         table.ajax.reload();
@@ -84,6 +84,7 @@ $(document).ready(function () {
     $('#sample_1 tbody').on('click', 'button#edit', function () {
         var table = $('#sample_1').DataTable();
         var data = table.row($(this).parents('tr')).data();
+        console.log(data)
         $("#id").val(data.process_id);
         $("#code").val(data.process_code);
         $("#name").val(data.process_name);
@@ -93,7 +94,29 @@ $(document).ready(function () {
         $("#rpo").val(data.process_rpo);
         $("#sort").val(data.process_sort);
         $("#process_color").val(data.process_color);
+
+        $("#system").val(data.system);
+        $("#database").val(data.database);
+        $("#redirect_path").val(data.redirect_path);
+        $("#pre_increasement").val(data.pre_increasement);
+
+        if (data.database=="db2"){
+            $("#pre_increasement_div").show();
+        }else {
+            $("#pre_increasement_div").hide();
+        }
     });
+
+    $("#database").change(function () {
+        if ($(this).val() == "Oracle") {
+            $("#pre_increasement_div").hide();
+        } else if ($(this).val() == "db2") {
+            $("#pre_increasement_div").show();
+        } else {
+            $("#pre_increasement_div").hide();
+        }
+    });
+
 
     $("#new").click(function () {
         $("#id").val("0");
@@ -105,27 +128,39 @@ $(document).ready(function () {
         $("#rpo").val("");
         $("#sort").val("");
         $("#process_color").val("");
+
+        $("#system").val("");
+        $("#database").val("");
+        $("#redirect_path").val("");
+        $("#pre_increasement").val("");
+
+        $("#pre_increasement_div").hide();
+
     });
 
     $('#save').click(function () {
         var table = $('#sample_1').DataTable();
-
+        console.log($("#pre_increasement").val())
         $.ajax({
             type: "POST",
             dataType: 'json',
             url: "../process_save/",
-            data:
-                {
-                    id: $("#id").val(),
-                    code: $("#code").val(),
-                    name: $("#name").val(),
-                    remark: $("#remark").val(),
-                    sign: $("#sign").val(),
-                    rto: $("#rto").val(),
-                    rpo: $("#rpo").val(),
-                    sort: $("#sort").val(),
-                    color: $("#process_color").val(),
-                },
+            data: {
+                id: $("#id").val(),
+                code: $("#code").val(),
+                name: $("#name").val(),
+                remark: $("#remark").val(),
+                sign: $("#sign").val(),
+                rto: $("#rto").val(),
+                rpo: $("#rpo").val(),
+                sort: $("#sort").val(),
+                color: $("#process_color").val(),
+
+                system: $("#system").val(),
+                database: $("#database").val(),
+                redirect_path: $("#redirect_path").val(),
+                pre_increasement: $("#pre_increasement").val(),
+            },
             success: function (data) {
                 var myres = data["res"];
                 var mydata = data["data"];
