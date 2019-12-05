@@ -24,8 +24,8 @@ from lxml import etree
 db_host, db_name, db_user, db_password = '', '', '', ''
 
 try:
-    #db_config_file = os.path.join(os.path.join(os.path.join(os.getcwd(), "faconstor"), "config"), "db_config.xml")
-    db_config_file = r'C:\TSDRM_CZB\faconstor\config\db_config.xml'
+    db_config_file = os.path.join(os.path.join(os.path.join(os.getcwd(), "faconstor"), "config"), "db_config.xml")
+    # db_config_file = r'C:\TSDRM_CZB\faconstor\config\db_config.xml'
     with open(db_config_file, "r") as f:
         content = etree.XML(f.read())
         db_config = content.xpath('./DB_CONFIG')
