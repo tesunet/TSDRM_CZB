@@ -1218,7 +1218,7 @@ def get_process_run_facts(request):
             all_process_run = cur_process.processrun_set.filter(state__in=["DONE", "STOP", "ERROR"]).filter(
                 starttime__startswith=today_date)
             process_run_today = 2
-            
+
             if all_process_run.exists():
                 cur_process_run = all_process_run.last()
                 if cur_process_run.state == "DONE":
@@ -1344,7 +1344,7 @@ def get_daily_processrun(request):
                     "invite": "1",
                 }
                 process_success_rate_list.append(invitations_dict)
-                
+
         return JsonResponse({"data": process_success_rate_list})
 
 
@@ -3515,15 +3515,23 @@ def process_data(request):
                 system, database, redirect_path, pre_increasement = "", "", "", ""
                 try:
                     config = etree.XML(process["config"])
-                    el = config.xpath("//config")
-                    if el:
-                        el = el[0]
-                        system = el.attrib.get("system", "")
-                        database = el.attrib.get("database", "")
-                        redirect_path = el.attrib.get("redirect_path", "")
-                        pre_increasement = el.attrib.get("pre_increasement", "")
+                    sys_el = config.xpath("//config")
+                    if sys_el:
+                        sys_el = sys_el[0]
+                        system = sys_el.attrib.get("system", "")
+                        database = sys_el.attrib.get("database", "")
+                    
+                    param_list = []
+                    param_el = config.xpath("//param")
+                    for param in param_el:
+                        param_list.append({
+                            "param_name": param.attrib.get("param_name", ""),
+                            "variable_name": param.attrib.get("variable_name", ""),
+                            "param_value": param.attrib.get("param_value", ""),
+                        })
                 except Exception as e:
                     print(e)
+
                 result.append({
                     "process_id": process["id"],
                     "process_code": process["code"],
@@ -3535,8 +3543,7 @@ def process_data(request):
                     "process_sort": process["sort"],
                     "system": system,
                     "database": database,
-                    "redirect_path": redirect_path,
-                    "pre_increasement": pre_increasement,
+                    "config": json.dumps(param_list),
                     # "process_color": process["color"],
                 })
         return JsonResponse({"data": result})
@@ -3558,8 +3565,13 @@ def process_save(request):
 
             system = request.POST.get('system', '')
             database = request.POST.get('database', '')
-            redirect_path = request.POST.get('redirect_path', '')
-            pre_increasement = request.POST.get('pre_increasement', '')
+
+            # 重定向路径/目标机安装目录/源机器名/备机用户名/备机密码
+            config = request.POST.get("config", "")
+            try:
+                config = json.loads(config)
+            except:
+                pass
 
             try:
                 id = int(id)
@@ -3579,10 +3591,26 @@ def process_save(request):
                         system_node = etree.SubElement(root, "config")
                         system_node.attrib["system"] = system
                         system_node.attrib["database"] = database
-                        system_node.attrib["redirect_path"] = redirect_path
-                        system_node.attrib["pre_increasement"] = pre_increasement if database == "db2" else ""
-                        config = etree.tostring(root)
 
+                        if config:
+                            param_list_node = etree.SubElement(root, "param_list")
+                            for c_config in config:
+                                param_node = etree.SubElement(param_list_node, "param")
+                                param_node.attrib["param_name"] = c_config["param_name"].strip()
+                                param_node.attrib["variable_name"] = c_config["variable_name"].strip()
+                                param_node.attrib["param_value"] = c_config["param_value"].strip()
+                        config = etree.tostring(root)
+                        """
+                        <root>
+                            <config system="Linux" database="db2"/>
+                            <param_list>
+                                <param param_name="&#30446;&#26631;&#23433;&#35013;&#30446;&#24405;" variable_name=" /usr/openv/netbackup/bin/" param_value="dest_path"/>
+                                <param param_name="&#28304;&#26426;&#22120;&#21517;" variable_name=" db2-std" param_value="origin_client"/>
+                                <param param_name="&#22791;&#26426;&#29992;&#25143;&#21517;" variable_name=" root" param_value="backup_username"/>
+                                <param param_name="&#22791;&#26426;&#23494;&#30721;" variable_name=" password" param_value="backup_passwd"/>
+                            </param_list>
+                        </root>
+                        """
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
                                 state="9").filter(type="cv_oracle")
