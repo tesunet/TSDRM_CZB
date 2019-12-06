@@ -460,9 +460,26 @@
 
         // 写入当前时间
         var myDate = new Date();
-        $("#run_time").val(myDate.toLocaleString());
+        $("#run_time").val(myDate.toLocaleString('zh', { hour12: false }));
         $("input[name='recovery_time_redio'][value='1']").prop("checked", true);
         $("input[name='recovery_time_redio'][value='2']").prop("checked", false);
+
+        // 获取备份集: backupset_stt backupset_edt
+        $("#backupset_edt").val(myDate.toLocaleString('zh', { hour12: false }));
+        // 默认30天前
+        var backupset_stt = new Date(myDate - 1000 * 60 * 60 * 24 * 30);
+        $("#backupset_stt").val(backupset_stt.toLocaleString('zh', { hour12: false }));
+    });
+
+    $('#backupset_stt').datetimepicker({
+        autoclose: true,
+        minView: "month",
+        format: 'yyyy/mm/dd hh:ii:ss',
+    });
+    $('#backupset_edt').datetimepicker({
+        autoclose: true,
+        minView: "month",
+        format: 'yyyy/mm/dd hh:ii:ss',
     });
 
     $("#static02").on("shown.bs.modal", function (event) {
@@ -476,4 +493,21 @@
         $("input[name='recovery_time_redio_invited'][value='1']").prop("checked", true);
         $("input[name='recovery_time_redio_invited'][value='2']").prop("checked", false);
     });
+
+    $('#load_backupset').click(function () {
+        // $.ajax({
+        //     type: "POST",
+        //     dataType: 'json',
+        //     url: "../load_backupset/",
+        //     data:{
+        //         process_id: $("#process_id").val(),
+        //         backupset_stt: $("#backupset_stt").val(),
+        //         backupset_edt: $("#backupset_edt").val(),
+        //     },
+        //     success: function (data) {
+        //         // ..
+                
+        //     }
+        // })
+    })
 });

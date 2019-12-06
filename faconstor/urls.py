@@ -3,7 +3,8 @@ from faconstor.views import *
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-    url(r'^favicon.ico$', RedirectView.as_view(url=r'static/new/images/tesunet.png')),
+    url(r'^favicon.ico$',
+        RedirectView.as_view(url=r'static/new/images/tesunet.png')),
     url(r'^$', index, {'funid': '2'}),
     url(r'^test/$', test),
     url(r'^processindex/(\d+)/$', processindex),
@@ -19,7 +20,8 @@ urlpatterns = [
     url(r'^login/$', login),
     url(r'^userlogin/$', userlogin),
     url(r'^forgetPassword/$', forgetPassword),
-    url(r'^resetpassword/([0-9a-zA-Z]{8}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12})/$',
+    url(
+        r'^resetpassword/([0-9a-zA-Z]{8}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12})/$',
         resetpassword),
     url(r'^reset/$', reset),
     url(r'^password/$', password),
@@ -46,7 +48,6 @@ urlpatterns = [
     url(r'^target_data/$', target_data),
     url(r'^target_save/$', target_save),
     url(r'^target_del/$', target_del),
-
     url(r'^origin/$', origin, {'funid': '70'}),
     url(r'^origin_data/$', origin_data),
     url(r'^origin_save/$', origin_save),
@@ -91,7 +92,6 @@ urlpatterns = [
     url(r'^cv_oracle_run_invited/$', cv_oracle_run_invited),
     url(r'^fill_with_invitation/$', fill_with_invitation),
     url(r'^save_modify_invitation/$', save_modify_invitation),
-
     url(r'^getrunsetps/$', getrunsetps),
     url(r'^cv_oracle_continue/$', cv_oracle_continue),
     url(r'^processsignsave/$', processsignsave),
@@ -108,9 +108,7 @@ urlpatterns = [
     url(r'^get_script_log/$', get_script_log),
     url(r'^save_task_remark/$', save_task_remark),
     url(r'^get_server_time_very_second/$', get_server_time_very_second),
-
     url(r'^get_force_script_info/$', get_force_script_info),
-
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
@@ -157,7 +155,6 @@ urlpatterns = [
     # 自主恢复
     url(r'^manualrecovery/$', manualrecovery, {'funid': '79'}),
     url(r'^manualrecoverydata/$', manualrecoverydata),
-
     url(r'^dooraclerecovery/$', dooraclerecovery),
     url(r'^oraclerecoverydata/$', oraclerecoverydata),
 
@@ -170,4 +167,7 @@ urlpatterns = [
     url(r'^process_schedule_data/$', process_schedule_data),
     url(r'^change_periodictask/$', change_periodictask),
     url(r'^process_schedule_del/$', process_schedule_del),
+
+    # 加载备份集
+    url(r'^load_backupset/$', load_backupset),
 ]

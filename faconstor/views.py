@@ -3520,7 +3520,7 @@ def process_data(request):
                         sys_el = sys_el[0]
                         system = sys_el.attrib.get("system", "")
                         database = sys_el.attrib.get("database", "")
-                    
+
                     param_list = []
                     param_el = config.xpath("//param")
                     for param in param_el:
@@ -7502,5 +7502,60 @@ def process_schedule_del(request):
             "ret": ret,
             "info": info
         })
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def load_backupset(request):
+    if request.user.is_authenticated():
+        # 'process_id': ['17'], 'backupset_edt': ['2019/12/6 16:06:19'], 'backupset_stt': ['2019/11/6 16:06:19']
+        process_id = request.POST.get("process_id", "")
+        backupset_stt = request.POST.get("backupset_stt", "")
+        backupset_edt = request.POST.get("backupset_edt", "")
+
+        try:
+            process_id = int(process_id)
+        except ValueError as e:
+            print(e)
+            return JsonResponse({
+                "ret": 0,
+                "data": []
+            })
+
+        try:
+            process = Process.objects.get(id=process_id)
+        except:
+            return JsonResponse({
+                "ret": 0,
+                "data": []
+            })
+        else:
+            config = process.config
+            if config:
+                dest_path, origin_client, backup_username, backup_passwd = "","","",""
+                param_els = config.xpath("//param")
+                for param_el in param_els:
+                    variable_name = param_el.attrib.get("variable_name", "")
+                    if variable_name == "dest_path":
+                        dest_path = param_el.attrib.get("dest_path", "")
+                    if variable_name == "origin_client":
+                        origin_client = param_el.attrib.get("origin_client", "")
+                    if variable_name == "backup_username":
+                        backup_username = param_el.attrib.get("backup_username", "")
+                    if variable_name == "backup_passwd":
+                        backup_passwd = param_el.attrib.get("backup_passwd", "")
+                #<root><config system="Linux" database="db2"/><param_list><param param_name="&#30446;&#26631;&#23433;&#35013;&#30446;&#24405;" variable_name="/usr/openv/netbackup/bin/" param_value="dest_path"/><param param_name="&#28304;&#26426;&#22120;&#21517;" variable_name="db2-std" param_value="origin_client"/><param param_name="&#22791;&#26426;&#29992;&#25143;&#21517;" variable_name="root" param_value="backup_username"/>
+                # <param param_name="&#22791;&#26426;&#23494;&#30721;" variable_name="password" param_value="backup_passwd"/></param_list></root>
+
+                # 固定参数名称: dest_path/origin_client/backup_username/backup_passwd
+                load_backupset_cmd = "cd {dest_path}&&./bplist -C {origin_client} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
+                    dest_path=dest_path,origin_client=origin_client,backupset_stt=backupset_stt,backupset_edt=backupset_edt
+                )
+
+                server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), remote_ip, backup_username, backup_passwd, script_os)
+                result = server_obj.run("")
+
+
+        return
     else:
         return HttpResponseRedirect("/login")

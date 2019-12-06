@@ -119,7 +119,12 @@ $(document).ready(function () {
         $("#system").val("");
         $("#database").val("");
 
-        $("#param_se").empty();
+        // 所有固定参数值清空
+        $('#param_se option').each(function () {
+            var pre_text = $(this).text();
+            var aft_test = pre_text.split(":")[0];
+            $(this).text(aft_test + ":");
+        });
     });
 
     $('#save').click(function () {
@@ -138,7 +143,6 @@ $(document).ready(function () {
             }
             params_list.push(param_dict)
         })
-
 
         $.ajax({
             type: "POST",
@@ -179,39 +183,6 @@ $(document).ready(function () {
     $('#param_se').contextmenu({
         target: '#context-menu2',
         onItem: function (context, e) {
-            if ($(e.target).text() == "新增") {
-                $('#param_operate').val('new');
-
-                // 清空所有子节点
-                $('#params').empty();
-
-                // 新增节点
-                $("#params").append(
-                    '<div class="form-group">' + 
-                        '<label class="col-md-2 control-label"><span style="color:red; "></span>参数名称</label>' +
-                        '<div class="col-md-10">' +
-                        '<input id="param_name" type="text" name="param_name" class="form-control" placeholder="">' +
-                        '<div class="form-control-focus"></div>' +
-                        '</div>' + 
-                    '</div>' + 
-                    '<div class="form-group">' +
-                        '<label class="col-md-2 control-label"><span style="color:red; "></span>变量设置</label>' +
-                        '<div class="col-md-10">' +
-                        '<input id="variable_name" type="text" name="variable_name" class="form-control" placeholder="">' +
-                        '<div class="form-control-focus"></div>' +
-                        '</div>' +
-                    '</div>' + 
-                    '<div class="form-group">' +
-                        '<label class="col-md-2 control-label"><span style="color:red; "></span>参数值</label>' +
-                        '<div class="col-md-10">' +
-                        '<input id="param_value" type="text" name="param_value" class="form-control" placeholder="">' +
-                        '<div class="form-control-focus"></div>' +
-                        '</div>' +
-                    '</div>'
-                );
-
-                $("button#param_edit").click();
-            }
             if ($(e.target).text() == "修改") {
                 $('#param_operate').val('edit');
                 if ($("#param_se").find('option:selected').length == 0)
@@ -231,23 +202,9 @@ $(document).ready(function () {
                         $("#params").empty();
                         $("#params").append(
                             '<div class="form-group">' +
-                            '<label class="col-md-2 control-label"><span style="color:red; "></span>参数名称</label>' +
+                            '<label class="col-md-2 control-label"><span style="color:red; "></span>' + txt_param + '</label>' +
                             '<div class="col-md-10">' +
-                            '<input id="param_name" type="text" name="param_name" value="' + txt_param + '" class="form-control" placeholder="">' +
-                            '<div class="form-control-focus"></div>' +
-                            '</div>' +
-                            '</div>' +
-                            '<div class="form-group">' +
-                            '<label class="col-md-2 control-label"><span style="color:red; "></span>变量设置</label>' +
-                            '<div class="col-md-10">' +
-                            '<input id="variable_name" type="text" name="variable_name" value="' + alpha_param + '" class="form-control" placeholder="">' +
-                            '<div class="form-control-focus"></div>' +
-                            '</div>' +
-                            '</div>' +
-                            '<div class="form-group">' +
-                            '<label class="col-md-2 control-label"><span style="color:red; "></span>参数值</label>' +
-                            '<div class="col-md-10">' +
-                            '<input id="param_value" type="text" name="param_value" value="' + v_param + '" class="form-control" placeholder="">' +
+                            '<input id="' + alpha_param + '" type="text" name="' + alpha_param + '" value="' + v_param + '" class="form-control" placeholder="">' +
                             '<div class="form-control-focus"></div>' +
                             '</div>' +
                             '</div>'
@@ -258,34 +215,15 @@ $(document).ready(function () {
                 }
 
             }
-            if ($(e.target).text() == "删除") {
-                $('#param_operate').val('delete');
-                if ($("#param_se").find('option:selected').length == 0)
-                    alert("请选择要删除的脚本。");
-                else {
-                    if (confirm("确定要删除该脚本吗？")) {
-                        $("#param_se").find('option:selected').remove();
-                    }
-                }
-            }
         }
     });
 
     $('#params_save').click(function () {
-        // 判断操作
-        var param_operate = $('#param_operate').val();
-        var param_name = $('#param_name').val();
-        var variable_name = $('#variable_name').val();
-        var param_value = $('#param_value').val();
+        var variable_name = $("#params").find("input").prop("id");
+        var param_name = $("#params").find("label").text();
+        var param_value = $("#params").find("input").val();
 
-        if (param_operate == "new"){
-            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value +'</option>');
-        } 
-        if (param_operate == "edit"){
-            // 指定value的option修改text
-            $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
-        }
-
+        $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
         $("#static01").modal("hide");
     });
 });
