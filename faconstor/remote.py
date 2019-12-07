@@ -105,8 +105,8 @@ class ServerByPara(object):
 
                 try:
                     data_init = str(stdout.read(), encoding='utf-8')
-                    if data_init:
-                        data_init = "".join(data_init.split("\r\n"))
+                    # if data_init:
+                    #     data_init = "".join(data_init.split("\r\n"))
 
                     if "command not found" in data_init:  # 命令不存在
                         exec_tag = 1
@@ -207,7 +207,7 @@ class ServerByPara(object):
             if self.client:
                 self.client.close()
         elif self.system_choice == "AIX":
-            result = self.exec_linux_cmd(succeedtext, port=22)
+            result = self.exec_linux_cmd(succeedtext, port=20)
             if self.client:
                 self.client.close()
         else:
@@ -218,8 +218,9 @@ class ServerByPara(object):
 if __name__ == '__main__':
     # server_obj = ServerByPara(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     # server_obj = ServerByPara(r"C:\Users\Administrator\Desktop\test_python.bat", "192.168.100.151", "administrator","tesunet@2017", "Windows")
-    server_obj = ServerByPara(r"echo 中文 > C:\Users\Administrator\Desktop\test.bat",
-                              "192.168.100.154", "administrator", "tesunet@2017", "Windows")
+    server_obj = ServerByPara(
+        r"cd /usr/openv/netbackup/bin/&&./bplist -C db2-std -t 18 -R -l -s 11/28/2019 20:00:00 -e 12/06/2019 22:57:14 /",
+        "192.168.100.65", "root", "tesunet@2019", "Linux")
     # linux_temp_script_file = r"/tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh"
     # cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
     # print(cmd)  # sed -i 's/\r$//' /tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh
@@ -229,5 +230,4 @@ if __name__ == '__main__':
     #                           "192.168.184.66", "root", "password", "Linux")
     # server_obj = ServerByPara(r"echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好'", "192.168.184.66", "root","password", "Linux")
 
-    server_obj.run("")
-    print(11111111111111)
+    res = server_obj.run("")

@@ -7509,9 +7509,9 @@ def process_schedule_del(request):
 def load_backupset(request):
     if request.user.is_authenticated():
         # 'process_id': ['17'], 'backupset_edt': ['2019/12/6 16:06:19'], 'backupset_stt': ['2019/11/6 16:06:19']
-        process_id = request.POST.get("process_id", "")
-        backupset_stt = request.POST.get("backupset_stt", "")
-        backupset_edt = request.POST.get("backupset_edt", "")
+        process_id = request.GET.get("process_id", "")
+        backupset_stt = request.GET.get("backupset_stt", "")
+        backupset_edt = request.GET.get("backupset_edt", "")
 
         try:
             process_id = int(process_id)
@@ -7530,32 +7530,81 @@ def load_backupset(request):
                 "data": []
             })
         else:
-            config = process.config
-            if config:
-                dest_path, origin_client, backup_username, backup_passwd = "","","",""
+            try:
+                config = etree.XML(process.config)
+            except Exception as e:
+                print(e)
+                return JsonResponse({
+                    "ret": 0,
+                    "data": []
+                })
+            else:
+                dest_path, origin_client, backup_username, backup_passwd, system = "","","","", ""
                 param_els = config.xpath("//param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
+                    print(variable_name)
                     if variable_name == "dest_path":
-                        dest_path = param_el.attrib.get("dest_path", "")
+                        dest_path = param_el.attrib.get("param_value", "")
+                        print(dest_path)
                     if variable_name == "origin_client":
-                        origin_client = param_el.attrib.get("origin_client", "")
+                        origin_client = param_el.attrib.get("param_value", "")
+                    if variable_name == "backup_ip":
+                        backup_ip = param_el.attrib.get("param_value", "")
                     if variable_name == "backup_username":
-                        backup_username = param_el.attrib.get("backup_username", "")
+                        backup_username = param_el.attrib.get("param_value", "")
                     if variable_name == "backup_passwd":
-                        backup_passwd = param_el.attrib.get("backup_passwd", "")
-                #<root><config system="Linux" database="db2"/><param_list><param param_name="&#30446;&#26631;&#23433;&#35013;&#30446;&#24405;" variable_name="/usr/openv/netbackup/bin/" param_value="dest_path"/><param param_name="&#28304;&#26426;&#22120;&#21517;" variable_name="db2-std" param_value="origin_client"/><param param_name="&#22791;&#26426;&#29992;&#25143;&#21517;" variable_name="root" param_value="backup_username"/>
-                # <param param_name="&#22791;&#26426;&#23494;&#30721;" variable_name="password" param_value="backup_passwd"/></param_list></root>
+                        backup_passwd = param_el.attrib.get("param_value", "")
+                
+                system_els = config.xpath("//config")
+                if system_els:
+                    system = system_els[0].attrib.get("system", "")
+                # <root>
+                # <config system="AIX" database="db2"/>
+                # <param_list>
+                # <param param_name="&#30446;&#26631;&#26426;&#23433;&#35013;&#30446;&#24405;" variable_name="dest_path" param_value="/usr/openv/netbackup/bin/"/>
+                # <param param_name="&#28304;&#26426;&#22120;&#21517;" variable_name="origin_client" param_value="db2-std"/>
+                # <param param_name="&#22791;&#26426;IP" variable_name="backup_ip" param_value="192.168.100.165"/>
+                # <param param_name="&#22791;&#26426;&#29992;&#25143;&#21517;" variable_name="backup_username" param_value="root"/>
+                # <param param_name="&#22791;&#26426;&#23494;&#30721;" variable_name="backup_passwd" param_value="tesunet@2019"/>
+                # <param param_name="&#25968;&#25454;&#24211;&#21517;" variable_name="db_name" param_value="TESUDB"/>
+                # <param param_name="&#37325;&#23450;&#21521;&#36335;&#24452;" variable_name="default_redirect_path" param_value="/tmp/"/>
+                # <param param_name="&#39044;&#35774;&#22686;&#37327;(M)" variable_name="pre_increasement" param_value="2000"/>
+                # </param_list>
+                # </root>
 
-                # 固定参数名称: dest_path/origin_client/backup_username/backup_passwd
-                load_backupset_cmd = "cd {dest_path}&&./bplist -C {origin_client} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
-                    dest_path=dest_path,origin_client=origin_client,backupset_stt=backupset_stt,backupset_edt=backupset_edt
-                )
+                dts_list = []
+                print([dest_path, origin_client, backupset_stt, backupset_edt])
+                if all([dest_path, origin_client, backupset_stt, backupset_edt]):
+                    # 固定参数名称: dest_path/origin_client/backup_username/backup_passwd
 
-                server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), remote_ip, backup_username, backup_passwd, script_os)
-                result = server_obj.run("")
+                    # 修改时间格式 %m/%d/%Y %H:%M:%S
+                    try:
+                        backupset_stt = datetime.datetime.strptime(backupset_stt, "%Y/%m/%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
+                        backupset_edt = datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
+                        # backupset_stt = "11/28/2019 20:00:00"
+                        # backupset_edt = "12/06/2019 22:57:14"
+                    except:
+                        pass
+                    else:
+                        load_backupset_cmd = "cd {dest_path}&&./bplist -C {origin_client} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
+                            dest_path=dest_path,origin_client=origin_client,backupset_stt=backupset_stt,backupset_edt=backupset_edt
+                        )
+                        print(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
+                        server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
+                        result = server_obj.run("")
 
+                        com = re.compile("TESUDB/[a-z A-Z 0-9]+/(\d+)/")
+                        ret_list = list(set(com.findall(result["data"])))
 
-        return
+                        # 构造dataTable数据
+                        for n, r in enumerate(ret_list):
+                            dts_list.append({
+                                "id": n+1,
+                                "bks_time": r
+                            })
+                return JsonResponse({
+                    "data": dts_list
+                })
     else:
         return HttpResponseRedirect("/login")

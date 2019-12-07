@@ -98,11 +98,17 @@ $(document).ready(function () {
         $("#database").val(data.database);
 
         // 参数信息
-        $('#param_se').empty();
         var config = JSON.parse(data.config);
-        for (var i=0; i < config.length; i++){
-            $('#param_se').append('<option value="' + config[i].variable_name +'">' + config[i].param_name + ': '+ config[i].param_value +'</option>');
-        }
+        $('#param_se option').each(function () {
+            var variable_name = $(this).prop("value");
+            for (var i = 0; i < config.length; i++) {
+                // 找到对应的variable_name，替换text
+                if (config[i].variable_name == variable_name){
+                    $(this).text(config[i].param_name + ": " + config[i].param_value);
+                    break;
+                }
+            }
+        });
     });
 
     $("#new").click(function () {
