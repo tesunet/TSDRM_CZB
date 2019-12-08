@@ -530,65 +530,27 @@
         });
         $('#bks_dt tbody').on('click', 'button#select', function () {
             var table = $('#bks_dt').DataTable();
-            var data = table.row($(this).parents('tr')).data();
+            var bcs_data = table.row($(this).parents('tr')).data();
 
+            // 选择之后，传入process_id/备份集时间 >> 生成/读取配置文件
+            // 修改重定向路径/预设增量 >> 重新生成配置文件
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                url: "../../set_rec_config/",
+                data: {
+                    process_id: $('#process_id').val(),
+                    bcs_time: bcs_data.bks_time,
+                },
+                success: function (data) {
+                    // ..
+                    console.log(data);
+                },
+                error: function () {
+                    alert("页面出现错误，请于管理员联系。");
+                }
+            });
             $('#bst_static').modal('hide');
         });
-
-
-
-        // $.ajax({
-        //     type: "POST",
-        //     dataType: 'json',
-        //     url: "../load_backupset/",
-        //     data:{
-        //         process_id: $("#process_id").val(),
-        //         backupset_stt: $("#backupset_stt").val(),
-        //         backupset_edt: $("#backupset_edt").val(),
-        //     },
-        //     success: function (data) {
-        //         console.log(data.data)
-        //         // 选择备份集时间点
-        //         $("#bst_static").modal("show");
-        //         $('#bks_dt').dataTable({
-        //             "bAutoWidth": true,
-        //             "bSort": false,
-        //             "bProcessing": true,
-        //             "ajax": "../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_stt=" + $("#backupset_stt").val() + "&backupset_edt=" + $("#backupset_edt").val(),
-        //             "columns": [
-        //                 { "data": "id" },
-        //                 { "data": "bks_time"},
-        //                 { "data": null }
-        //             ],
-        //             "columnDefs": [{
-        //                 "targets": -1,
-        //                 "data": null,
-        //                 "defaultContent": "<button  id='select' title='选择'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-check'></i></button>"
-        //             }],
-        //             "oLanguage": {
-        //                 "sLengthMenu": "每页显示 _MENU_ 条记录",
-        //                 "sZeroRecords": "抱歉， 没有找到",
-        //                 "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
-        //                 "sInfoEmpty": "没有数据",
-        //                 "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
-        //                 "sSearch": "搜索",
-        //                 "oPaginate": {
-        //                     "sFirst": "首页",
-        //                     "sPrevious": "前一页",
-        //                     "sNext": "后一页",
-        //                     "sLast": "尾页"
-        //                 },
-        //                 "sZeroRecords": "没有检索到数据",
-
-        //             }
-        //         });
-        //         $('#bks_dt tbody').on('click', 'button#select', function () {
-        //             var table = $('#bks_dt').DataTable();
-        //             var data = table.row($(this).parents('tr')).data();
-
-        //             $('#bst_static').modal('hide');
-        //         });
-        //     }
-        // })
     })
 });

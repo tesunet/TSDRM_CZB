@@ -7182,7 +7182,6 @@ def dooraclerecovery(request):
             if not instance:
                 return HttpResponse("恢复任务启动失败, 数据库实例不存在。")
             oraRestoreOperator = {"restoreTime": restoreTime, "browseJobId": None, "data_path": data_path, "copy_priority": copy_priority}
-            print("111111", oraRestoreOperator)
 
             cvToken = CV_RestApi_Token()
             cvToken.login(settings.CVApi_credit)
@@ -7543,10 +7542,8 @@ def load_backupset(request):
                 param_els = config.xpath("//param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
-                    print(variable_name)
                     if variable_name == "dest_path":
                         dest_path = param_el.attrib.get("param_value", "")
-                        print(dest_path)
                     if variable_name == "origin_client":
                         origin_client = param_el.attrib.get("param_value", "")
                     if variable_name == "backup_ip":
@@ -7574,7 +7571,6 @@ def load_backupset(request):
                 # </root>
 
                 dts_list = []
-                print([dest_path, origin_client, backupset_stt, backupset_edt])
                 if all([dest_path, origin_client, backupset_stt, backupset_edt]):
                     # 固定参数名称: dest_path/origin_client/backup_username/backup_passwd
 
@@ -7590,7 +7586,6 @@ def load_backupset(request):
                         load_backupset_cmd = "cd {dest_path}&&./bplist -C {origin_client} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
                             dest_path=dest_path,origin_client=origin_client,backupset_stt=backupset_stt,backupset_edt=backupset_edt
                         )
-                        print(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
                         server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
                         result = server_obj.run("")
 
@@ -7606,5 +7601,226 @@ def load_backupset(request):
                 return JsonResponse({
                     "data": dts_list
                 })
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def set_rec_config(request):
+    if request.user.is_authenticated():
+        process_id = request.POST.get("process_id", "")
+        bcs_time = request.POST.get("bcs_time", "")
+        # 选择之后，传入process_id/备份集时间 >> 生成/读取配置文件
+        # 修改重定向路径/预设增量 >> 重新生成配置文件
+
+        # su - db2inst1 
+        # cd /home/db2inst1
+        # db2 restore db tesudb load /usr/openv/netbackup/bin/nbdb2.so64 taken at 20191205214326 redirect generate script tesudb.txt
+        # load_backupset_cmd = "cd {dest_path}&&./bplist -C {origin_client} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
+        #     dest_path=dest_path,origin_client=origin_client,backupset_stt=backupset_stt,backupset_edt=backupset_edt
+        # )
+        # server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
+        # result = server_obj.run("")
+
+        
+        tmp = """
+        -- *****************************************************************************
+        -- ** automatically created redirect restore script
+        -- *****************************************************************************
+        UPDATE COMMAND OPTIONS USING S ON Z ON TESUDB_NODE0000.out V ON;
+        SET CLIENT ATTACH_DBPARTITIONNUM  0;
+        SET CLIENT CONNECT_DBPARTITIONNUM 0;
+        -- *****************************************************************************
+        -- ** automatically created redirect restore script
+        -- *****************************************************************************
+        RESTORE DATABASE TESUDB
+        -- USER  <username>
+        -- USING '<password>'
+        LOAD '/usr/openv/netbackup/bin/nbdb2.so64'
+        OPEN 4 SESSIONS
+        -- OPTIONS '<options-string>'
+        TAKEN AT 20191205214326
+        -- ON '/home/db2inst1'
+        -- DBPATH ON '<target-directory>'
+        INTO TESUDB
+        -- NEWLOGPATH '/home/db2inst1/db2inst1/NODE0000/SQL00003/SQLOGDIR/'
+        -- WITH <num-buff> BUFFERS
+        -- BUFFER <buffer-size>
+        -- REPLACE HISTORY FILE
+        -- REPLACE EXISTING
+        REDIRECT
+        -- PARALLELISM <n>
+        -- WITHOUT ROLLING FORWARD
+        -- WITHOUT PROMPTING
+        ;
+        -- *****************************************************************************
+        -- ** table space definition
+        -- *****************************************************************************
+        -- *****************************************************************************
+        -- ** Tablespace name                            = SYSCATSPACE
+        -- **   Tablespace ID                            = 0
+        -- **   Tablespace Type                          = Database managed space
+        -- **   Tablespace Content Type                  = All permanent data. Regular table space.
+        -- **   Tablespace Page size (bytes)             = 4096
+        -- **   Tablespace Extent size (pages)           = 4
+        -- **   Using automatic storage                  = Yes
+        -- **   Auto-resize enabled                      = Yes
+        -- **   Total number of pages                    = 24576
+        -- **   Number of usable pages                   = 24572
+        -- **   High water mark (pages)                  = 16632
+        -- *****************************************************************************
+        -- *****************************************************************************
+        -- ** Tablespace name                            = TEMPSPACE1
+        -- **   Tablespace ID                            = 1
+        -- **   Tablespace Type                          = System managed space
+        -- **   Tablespace Content Type                  = System Temporary data
+        -- **   Tablespace Page size (bytes)             = 4096
+        -- **   Tablespace Extent size (pages)           = 32
+        -- **   Using automatic storage                  = Yes
+        -- **   Total number of pages                    = 1
+        -- *****************************************************************************
+        -- *****************************************************************************
+        -- ** Tablespace name                            = USERSPACE1
+        -- **   Tablespace ID                            = 2
+        -- **   Tablespace Type                          = Database managed space
+        -- **   Tablespace Content Type                  = All permanent data. Large table space.
+        -- **   Tablespace Page size (bytes)             = 4096
+        -- **   Tablespace Extent size (pages)           = 32
+        -- **   Using automatic storage                  = Yes
+        -- **   Auto-resize enabled                      = Yes
+        -- **   Total number of pages                    = 8192
+        -- **   Number of usable pages                   = 8160
+        -- **   High water mark (pages)                  = 96
+        -- *****************************************************************************
+        -- *****************************************************************************
+        -- ** Tablespace name                            = SYSTOOLSPACE
+        -- **   Tablespace ID                            = 3
+        -- **   Tablespace Type                          = Database managed space
+        -- **   Tablespace Content Type                  = All permanent data. Large table space.
+        -- **   Tablespace Page size (bytes)             = 4096
+        -- **   Tablespace Extent size (pages)           = 4
+        -- **   Using automatic storage                  = Yes
+        -- **   Auto-resize enabled                      = Yes
+        -- **   Total number of pages                    = 8192
+        -- **   Number of usable pages                   = 8188
+        -- **   High water mark (pages)                  = 144
+        -- *****************************************************************************
+        -- *****************************************************************************
+        -- ** Tablespace name                            = LVTBS
+        -- **   Tablespace ID                            = 4
+        -- **   Tablespace Type                          = Database managed space
+        -- **   Tablespace Content Type                  = All permanent data. Large table space.
+        -- **   Tablespace Page size (bytes)             = 4096
+        -- **   Tablespace Extent size (pages)           = 32
+        -- **   Using automatic storage                  = No
+        -- **   Auto-resize enabled                      = No
+        -- **   Total number of pages                    = 2048
+        -- **   Number of usable pages                   = 2016
+        -- **   High water mark (pages)                  = 288
+        -- *****************************************************************************
+        SET TABLESPACE CONTAINERS FOR 4
+        -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
+        USING (
+        DEVICE '/dev/raw/raw3'                                                    2048
+        );
+        -- *****************************************************************************
+        -- ** Tablespace name                            = LVTBS2
+        -- **   Tablespace ID                            = 5
+        -- **   Tablespace Type                          = Database managed space
+        -- **   Tablespace Content Type                  = All permanent data. Large table space.
+        -- **   Tablespace Page size (bytes)             = 4096
+        -- **   Tablespace Extent size (pages)           = 32
+        -- **   Using automatic storage                  = No
+        -- **   Auto-resize enabled                      = No
+        -- **   Total number of pages                    = 4096
+        -- **   Number of usable pages                   = 4032
+        -- **   High water mark (pages)                  = 160
+        -- *****************************************************************************
+        SET TABLESPACE CONTAINERS FOR 5
+        -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
+        USING (
+        DEVICE '/dev/raw/raw1'                                                    2048
+        , DEVICE '/dev/raw/raw2'                                                    2048
+        );
+        -- *****************************************************************************
+        -- ** Tablespace name                            = LVTBS3
+        -- **   Tablespace ID                            = 6
+        -- **   Tablespace Type                          = Database managed space
+        -- **   Tablespace Content Type                  = All permanent data. Large table space.
+        -- **   Tablespace Page size (bytes)             = 4096
+        -- **   Tablespace Extent size (pages)           = 32
+        -- **   Using automatic storage                  = No
+        -- **   Auto-resize enabled                      = No
+        -- **   Total number of pages                    = 2048
+        -- **   Number of usable pages                   = 2016
+        -- **   High water mark (pages)                  = 160
+        -- *****************************************************************************
+        SET TABLESPACE CONTAINERS FOR 6
+        -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
+        USING (
+        DEVICE '/dev/raw/raw4'                                                    2048
+        );
+        -- *****************************************************************************
+        -- ** start redirected restore
+        -- *****************************************************************************
+        RESTORE DATABASE TESUDB CONTINUE;
+        -- *****************************************************************************
+        -- ** end of file
+        -- *****************************************************************************
+        """
+
+        # 1.拆分
+        f_parts = tmp.split("""
+        -- *****************************************************************************
+        -- *****************************************************************************
+        """)
+
+        com = re.compile(
+            """(Tablespace name[ ]+=[ ]+[a-z A-Z 0-9]+[\d\D]*?DEVICE[ ]+'[\d\D]*?'[ ]+\d+[\d\D]*?\);)"""
+        )
+
+        whole_dict = {}
+        whole_dict["all_text"] = tmp
+
+        split_part_list = []
+        # 1.拆分
+        for f_part in f_parts:
+            if "DEVICE" in f_part:
+                # 2.截段
+                tmp_parts = com.findall(f_part)
+
+                for tmp_part in tmp_parts:
+                    space_part_dict = {}
+
+                    # 表名
+                    space_name = ""
+
+                    # 3.逐行提取
+                    params_parts = tmp_part.split("\n")
+
+                    params_list = []
+                    for params_part in params_parts:
+                        params_dict = {}
+                        if "Tablespace name" in params_part:
+                            # 匹配表名
+                            space_com = re.compile(
+                                "[\d\D]*?Tablespace name[ ]+=[ ]+([a-z A-Z 0-9]+)")
+                            space_name = space_com.findall(params_part)[0] if space_com.findall(params_part) else ""
+
+                        if "DEVICE" in params_part:
+                            device_com = re.compile("DEVICE[ ]+'([\d\D]*?)'[ ]+(\d+)")
+                            params = device_com.findall(params_part)
+                            for p in params:
+                                device_path, capacity = p
+                                params_dict["device_path"] = device_path
+                                params_dict["capacity"] = capacity
+                        if params_dict:
+                            params_list.append(params_dict)
+
+                    space_part_dict["space_name"] = space_name
+                    space_part_dict["space_dialog"] = tmp_part
+                    space_part_dict["params_list"] = params_list
+                    split_part_list.append(space_part_dict)
+        whole_dict["split_part_list"] = split_part_list
+        return JsonResponse({"data": whole_dict})
     else:
         return HttpResponseRedirect("/login")
