@@ -3960,23 +3960,23 @@ def cv_oracle_run(request):
                     if ssh:
                         ssh.close()
             # return
-            running_process = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
+            running_process = ProcessRun.objects.filter(process=process, state__in=["RUN", "ERROR"])
             if (len(running_process) > 0):
                 result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
             else:
-                planning_process = ProcessRun.objects.filter(process=process[0], state="PLAN")
+                planning_process = ProcessRun.objects.filter(process=process, state="PLAN")
                 if (len(planning_process) > 0):
                     result["res"] = '流程启动失败，计划流程未执行，务必先完成计划流程。'
                 else:
                     myprocessrun = ProcessRun()
-                    myprocessrun.process = process[0]
+                    myprocessrun.process = process
                     myprocessrun.starttime = datetime.datetime.now()
                     myprocessrun.creatuser = request.user.username
                     myprocessrun.run_reason = run_reason
                     myprocessrun.state = "RUN"
 
                     myprocessrun.save()
-                    mystep = process[0].step_set.exclude(state="9").order_by("sort")
+                    mystep = process.step_set.exclude(state="9").order_by("sort")
                     if (len(mystep) <= 0):
                         result["res"] = '流程启动失败，没有找到可用步骤。'
                     else:
@@ -4002,10 +4002,10 @@ def cv_oracle_run(request):
                                 myverifyitemsrun.steprun = mysteprun
                                 myverifyitemsrun.save()
 
-                        allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                        allgroup = process.step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                             "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                        if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                        if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
                             # 将当前流程改成SIGN
                             c_process_run_id = myprocessrun.id
                             c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
