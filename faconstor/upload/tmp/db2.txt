@@ -1,0 +1,144 @@
+"-- *****************************************************************************
+-- ** automatically created redirect restore script
+-- *****************************************************************************
+UPDATE COMMAND OPTIONS USING S ON Z ON TESUDB_NODE0000.out V ON;
+SET CLIENT ATTACH_DBPARTITIONNUM  0;
+SET CLIENT CONNECT_DBPARTITIONNUM 0;
+-- *****************************************************************************
+-- ** automatically created redirect restore script
+-- *****************************************************************************
+RESTORE DATABASE TESUDB
+-- USER  <username>
+-- USING '<password>'
+LOAD '/usr/openv/netbackup/bin/nbdb2.so64'
+OPEN 4 SESSIONS
+-- OPTIONS '<options-string>'
+TAKEN AT 20191205214326
+-- ON '/home/db2inst1'
+-- DBPATH ON '<target-directory>'
+INTO TESUDB
+-- NEWLOGPATH '/home/db2inst1/db2inst1/NODE0000/SQL00003/SQLOGDIR/'
+-- WITH <num-buff> BUFFERS
+-- BUFFER <buffer-size>
+-- REPLACE HISTORY FILE
+-- REPLACE EXISTING
+REDIRECT
+-- PARALLELISM <n>
+-- WITHOUT ROLLING FORWARD
+-- WITHOUT PROMPTING
+;
+-- *****************************************************************************
+-- ** table space definition
+-- *****************************************************************************
+-- *****************************************************************************
+-- ** Tablespace name                            = SYSCATSPACE
+-- **   Tablespace ID                            = 0
+-- **   Tablespace Type                          = Database managed space                      
+-- **   Tablespace Content Type                  = All permanent data. Regular table space.    
+-- **   Tablespace Page size (bytes)             = 4096
+-- **   Tablespace Extent size (pages)           = 4
+-- **   Using automatic storage                  = Yes     
+-- **   Auto-resize enabled                      = Yes     
+-- **   Total number of pages                    = 24576
+-- **   Number of usable pages                   = 24572
+-- **   High water mark (pages)                  = 16632
+-- *****************************************************************************
+-- *****************************************************************************
+-- ** Tablespace name                            = TEMPSPACE1
+-- **   Tablespace ID                            = 1
+-- **   Tablespace Type                          = System managed space                        
+-- **   Tablespace Content Type                  = System Temporary data                       
+-- **   Tablespace Page size (bytes)             = 4096
+-- **   Tablespace Extent size (pages)           = 32
+-- **   Using automatic storage                  = Yes     
+-- **   Total number of pages                    = 1
+-- *****************************************************************************
+-- *****************************************************************************
+-- ** Tablespace name                            = USERSPACE1
+-- **   Tablespace ID                            = 2
+-- **   Tablespace Type                          = Database managed space                      
+-- **   Tablespace Content Type                  = All permanent data. Large table space.      
+-- **   Tablespace Page size (bytes)             = 4096
+-- **   Tablespace Extent size (pages)           = 32
+-- **   Using automatic storage                  = Yes     
+-- **   Auto-resize enabled                      = Yes     
+-- **   Total number of pages                    = 8192
+-- **   Number of usable pages                   = 8160
+-- **   High water mark (pages)                  = 96
+-- *****************************************************************************
+-- *****************************************************************************
+-- ** Tablespace name                            = SYSTOOLSPACE
+-- **   Tablespace ID                            = 3
+-- **   Tablespace Type                          = Database managed space                      
+-- **   Tablespace Content Type                  = All permanent data. Large table space.      
+-- **   Tablespace Page size (bytes)             = 4096
+-- **   Tablespace Extent size (pages)           = 4
+-- **   Using automatic storage                  = Yes     
+-- **   Auto-resize enabled                      = Yes     
+-- **   Total number of pages                    = 8192
+-- **   Number of usable pages                   = 8188
+-- **   High water mark (pages)                  = 144
+-- *****************************************************************************
+-- *****************************************************************************
+-- ** Tablespace name                            = LVTBS
+-- **   Tablespace ID                            = 4
+-- **   Tablespace Type                          = Database managed space                      
+-- **   Tablespace Content Type                  = All permanent data. Large table space.      
+-- **   Tablespace Page size (bytes)             = 4096
+-- **   Tablespace Extent size (pages)           = 32
+-- **   Using automatic storage                  = No      
+-- **   Auto-resize enabled                      = No      
+-- **   Total number of pages                    = 2048
+-- **   Number of usable pages                   = 2016
+-- **   High water mark (pages)                  = 288
+-- *****************************************************************************
+SET TABLESPACE CONTAINERS FOR 4
+-- IGNORE ROLLFORWARD CONTAINER OPERATIONS
+USING (
+  DEVICE '/dev/raw/raw3'                                                    7048
+);
+-- *****************************************************************************
+-- ** Tablespace name                            = LVTBS2
+-- **   Tablespace ID                            = 5
+-- **   Tablespace Type                          = Database managed space                      
+-- **   Tablespace Content Type                  = All permanent data. Large table space.      
+-- **   Tablespace Page size (bytes)             = 4096
+-- **   Tablespace Extent size (pages)           = 32
+-- **   Using automatic storage                  = No      
+-- **   Auto-resize enabled                      = No      
+-- **   Total number of pages                    = 4096
+-- **   Number of usable pages                   = 4032
+-- **   High water mark (pages)                  = 160
+-- *****************************************************************************
+SET TABLESPACE CONTAINERS FOR 5
+-- IGNORE ROLLFORWARD CONTAINER OPERATIONS
+USING (
+  DEVICE '/dev/raw/raw1'                                                    8048
+, DEVICE '/dev/raw/raw2'                                                    5048
+);
+-- *****************************************************************************
+-- ** Tablespace name                            = LVTBS3
+-- **   Tablespace ID                            = 6
+-- **   Tablespace Type                          = Database managed space                      
+-- **   Tablespace Content Type                  = All permanent data. Large table space.      
+-- **   Tablespace Page size (bytes)             = 4096
+-- **   Tablespace Extent size (pages)           = 32
+-- **   Using automatic storage                  = No      
+-- **   Auto-resize enabled                      = No      
+-- **   Total number of pages                    = 2048
+-- **   Number of usable pages                   = 2016
+-- **   High water mark (pages)                  = 160
+-- *****************************************************************************
+SET TABLESPACE CONTAINERS FOR 6
+-- IGNORE ROLLFORWARD CONTAINER OPERATIONS
+USING (
+  DEVICE '/dev/raw/raw4'                                                    4048
+);
+-- *****************************************************************************
+-- ** start redirected restore
+-- *****************************************************************************
+RESTORE DATABASE TESUDB CONTINUE;
+-- *****************************************************************************
+-- ** end of file
+-- *****************************************************************************
+"

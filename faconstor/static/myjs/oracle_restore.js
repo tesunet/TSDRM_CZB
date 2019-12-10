@@ -100,6 +100,63 @@
     $("#confirm").click(function () {
         var process_id = $("#process_id").val();
 
+        var dialog_inputs = $('#config_edit_table thead').find('input');
+
+        var all_text = $('#all_text').val();
+        var new_all_text = "";
+        // 重新构造配置文件
+        for (var i = 0; i < dialog_inputs.length; i++) {
+            var tmp_dialog = dialog_inputs[i].value;
+            var tmp_dialog_id = dialog_inputs[i].id.split("_dialog")[0];
+
+            var new_tmp_dialog = "";
+            var all_config_edit_trs = $('#config_edit_tbody').find('tr');
+
+            for (var j=0;j<all_config_edit_trs.length; j++){
+                console.log('&&', j)
+                var new_line_text = "";
+
+                var cur_config_edit_tr = jQuery(all_config_edit_trs[j]);
+                // 原行信息
+                var line_text = cur_config_edit_tr.attr("line_text");
+
+                var space_td = cur_config_edit_tr.find('td:eq(0)').text().trim();
+
+                // if (tmp_dialog.indexOf(space_td) != -1) {
+                if (tmp_dialog_id == space_td) {
+                    // 旧数据
+                    var pre_config_td = cur_config_edit_tr.find('td:eq(1)').text().trim();
+                    console.log(pre_config_td.split(" "))
+                    var pre_device_path = pre_config_td.split(" ")[0];
+                    var pre_capacity = pre_config_td.split(" ")[1];
+
+                    // 新数据
+                    var aft_device_path = cur_config_edit_tr.find('td:eq(2)').text().trim();
+                    var aft_capacity = cur_config_edit_tr.find('td:eq(3)').text().trim();
+
+                    // 预设增量+原容量
+                    var c_aft_capacity = Number(pre_capacity.trim()) + Number(aft_capacity.trim());
+
+                    if (new_line_text) {
+                        new_line_text = new_line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, c_aft_capacity);
+                    } else {
+                        new_line_text = line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, c_aft_capacity);
+                    }
+
+                    if (new_tmp_dialog) {
+                        new_tmp_dialog = new_tmp_dialog.replace(line_text, new_line_text)
+                    } else {
+                        new_tmp_dialog = tmp_dialog.replace(line_text, new_line_text)
+                    }
+                }
+            }
+            if (new_all_text) {
+                new_all_text = new_all_text.replace(tmp_dialog, new_tmp_dialog)
+            } else {
+                new_all_text = all_text.replace(tmp_dialog, new_tmp_dialog)
+            }
+        }
+
         // 非邀请流程启动
         $.ajax({
             type: "POST",
@@ -111,6 +168,7 @@
                     run_person: $("#run_person").val(),
                     run_time: $("#run_time").val(),
                     run_reason: $("#run_reason").val(),
+                    new_config: JSON.stringify(new_all_text),
                 },
             success: function (data) {
                 if (data["res"] == "新增成功。") {
@@ -169,7 +227,9 @@
         var myDate = new Date();
         $("#run_time").val(myDate.toLocaleString());
 
-        $("#target").val("")
+        $("#target").val("");
+
+        $('#config_edit_div').hide();
     });
 
     $("#run_invited").click(function () {
@@ -469,6 +529,8 @@
         // 默认30天前
         var backupset_stt = new Date(myDate - 1000 * 60 * 60 * 24 * 30);
         $("#backupset_stt").val(backupset_stt.toLocaleString('zh', { hour12: false }));
+
+        $('#load_backupset').trigger('click');
     });
 
     $('#backupset_stt').datetimepicker({
@@ -496,7 +558,9 @@
 
     $('#load_backupset').click(function () {
         $("#bst_static").modal("show");
+
         $('#bks_dt').dataTable({
+            "retrieve": true,
             "bAutoWidth": true,
             "bSort": false,
             "bProcessing": true,
@@ -543,8 +607,39 @@
                     bcs_time: bcs_data.bks_time,
                 },
                 success: function (data) {
-                    // ..
-                    console.log(data);
+                    if (data.ret == 0) {
+                        alert(data.data);
+                    } else {
+                        console.log(data)
+                        // 生成配置表格>> 可修改
+                        $('#config_edit_div').show();
+                        $('#config_edit_table tbody').empty();
+                        $('#all_text').val(data.data.all_text);
+                        // $('#all_text').val(data.data.all_text.replace("\\r", "\r").replace("\\n", "\n"));
+                        for (var i = 0; i < data.data.split_part_list.length; i++) {
+                            $('#config_edit_table thead').append(
+                                '<input type="text" id="' + data.data.split_part_list[i].space_name + '_dialog" name="' + data.data.split_part_list[i].space_name + '_dialog" value="' + data.data.split_part_list[i].space_dialog.replace("\\r", "\r").replace("\\n", "\n") + '" hidden>'
+                            );
+
+                            for (var j = 0; j < data.data.split_part_list[i].params_list.length; j++) {
+                                $('#config_edit_table tbody').append(
+                                    '<tr id="' + data.data.split_part_list[i].space_name + '" line_text="' + data.data.split_part_list[i].params_list[j].line_text + '">' +
+                                    '<td>' +
+                                    '<div class="success"></div>' +
+                                    '&nbsp&nbsp' + data.data.split_part_list[i].space_name +
+                                    '</td>' +
+                                    '<td> ' + data.data.split_part_list[i].params_list[j].device_path + ' ' + data.data.split_part_list[i].params_list[j].capacity + ' </td>' +
+                                    '<td class="hidden-xs"> ' + data.data.split_part_list[i].params_list[j].device_path + ' </td>' +
+                                    '<td> ' + data.data.split_part_list[i].params_list[j].pre_increasement + ' </td>' +
+                                    '<td>' +
+                                    '<a href="javascript:;" class="btn btn-outline btn-circle dark btn-sm black">' +
+                                    '<i class="fa fa-edit"></i> 修改 </a>' +
+                                    '</td>' +
+                                    '</tr>'
+                                );
+                            }
+                        }
+                    }
                 },
                 error: function () {
                     alert("页面出现错误，请于管理员联系。");
@@ -552,5 +647,30 @@
             });
             $('#bst_static').modal('hide');
         });
-    })
+    });
+
+    var direct_node = '',
+        pre_increasement_node = "";
+
+    // 选择修改
+    $('#config_edit_table tbody').on('click', 'a', function () {
+        // 点击弹出模态框
+        $('#config_static').modal('show');
+
+        // 提取重定向路径与预设增量
+        direct_node = $(this).parent().parent().find('td:eq(2)');
+        pre_increasement_node = $(this).parent().parent().find('td:eq(3)');
+
+        $('#redirect_path').val(direct_node.text().trim());
+        $('#pre_increasement').val(pre_increasement_node.text().trim());
+    });
+
+    // 输入修改原tr下的数据
+    $('#config_save').click(function () {
+        if (direct_node && pre_increasement_node) {
+            direct_node.text($('#redirect_path').val().trim());
+            pre_increasement_node.text($('#pre_increasement').val().trim());
+            $('#config_static').modal('hide');
+        }
+    });
 });

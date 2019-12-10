@@ -122,6 +122,17 @@
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
+                            <div class="form-group" id='backup_host_div' hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>备机</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="backup_host" name="backup_host">
+                                        {% for host in all_host %}
+                                            <option value="{{host.id}}">{{host.host_name}}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>RTO</label>
@@ -157,19 +168,21 @@
                                 <div class="col-md-10">
                                     <div id="context-menu2">
                                         <ul class="dropdown-menu" role="menu">
+                                            <li><a tabindex="-1" data-toggle="modal" data-target="#static01">新增</a></li>
                                             <li><a tabindex="-1" data-toggle="modal" data-target="#static01">修改</a></li>
+                                            <li><a tabindex="-1">删除</a></li>
                                         </ul>
                                     </div>
                                     <button hidden id="param_edit" tabindex="-1" data-toggle="modal" data-target="#static01"></button>
                                     <select id="param_se" size="7" class="form-control" style="overflow-y:auto;">
-                                        <option value="dest_path">目标机安装目录:</option>
+                                        <!-- <option value="dest_path">目标机安装目录:</option>
                                         <option value="origin_client">源机器名:</option>
                                         <option value="backup_ip">备机IP:</option>
                                         <option value="backup_username">备机用户名:</option>
                                         <option value="backup_passwd">备机密码:</option>
                                         <option value="db_name">数据库名:</option>
                                         <option value="default_redirect_path">重定向路径:</option>
-                                        <option value="pre_increasement">预设增量(M):</option>
+                                        <option value="pre_increasement">预设增量(M):</option> -->
                                     </select>
                                 </div>
                             </div>

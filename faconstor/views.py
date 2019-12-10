@@ -656,9 +656,9 @@ def index(request, funid):
         """)
         rows = cursor.fetchall()
 
-        cvsql = SQLApi.CVApi(settings.sql_credit)
-        cvsql.updateCVUTC()
-        cvsql.close()
+        # cvsql = SQLApi.CVApi(settings.sql_credit)
+        # cvsql.updateCVUTC()
+        # cvsql.close()
 
         if len(rows) > 0:
             for task in rows:
@@ -3502,8 +3502,13 @@ def get_all_groups(request):
 
 def process_design(request, funid):
     if request.user.is_authenticated():
+
+        # 备机
+        all_host = HostsManage.objects.exclude(state='9')
+
         return render(request, "processdesign.html",
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request)})
+                      {'username': request.user.userinfo.fullname, "all_host": all_host,
+                      "pagefuns": getpagefuns(funid, request=request)})
 
 
 def process_data(request):
@@ -3566,6 +3571,8 @@ def process_save(request):
             system = request.POST.get('system', '')
             database = request.POST.get('database', '')
 
+            backup_host = request.POST.get('backup_host', "")
+
             # 重定向路径/目标机安装目录/源机器名/备机用户名/备机密码
             config = request.POST.get("config", "")
             try:
@@ -3611,6 +3618,12 @@ def process_save(request):
                             </param_list>
                         </root>
                         """
+                        try:
+                            backup_host = int(backup_host)
+                        except:
+                            pass
+
+
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
                                 state="9").filter(type="cv_oracle")
@@ -3628,6 +3641,7 @@ def process_save(request):
                                 processsave.rpo = rpo if rpo else None
                                 processsave.sort = sort if sort else None
                                 processsave.color = color
+                                processsave.backup_host_id = backup_host if bakcup_host else None
                                 processsave.config = config
                                 processsave.save()
                                 result["res"] = "保存成功。"
@@ -3648,11 +3662,13 @@ def process_save(request):
                                     processsave.rpo = rpo if rpo else None
                                     processsave.sort = sort if sort else None
                                     processsave.color = color
+                                    processsave.backup_host_id = backup_host if backup_host else None
                                     processsave.config = config
                                     processsave.save()
                                     result["res"] = "保存成功。"
                                     result["data"] = processsave.id
-                                except:
+                                except Exception as e:
+                                    print(e)
                                     result["res"] = "修改失败。"
         return HttpResponse(json.dumps(result))
 
@@ -3872,6 +3888,17 @@ def cv_oracle_run(request):
         run_person = request.POST.get('run_person', '')
         run_time = request.POST.get('run_time', '')
         run_reason = request.POST.get('run_reason', '')
+        # 如果是linux\r\n
+        new_config = request.POST.get('new_config', '').replace("@@@", "\n")
+
+        # 写入本地文件后传上服务器
+        db2_config_path = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "tmp" + os.sep + "db2.txt"
+
+        try:
+            with open(db2_config_path, "w") as f:
+                f.write(new_config)
+        except:
+            return JsonResponse({"res": "配置文件写入本地失败。"})
 
         try:
             processid = int(processid)
@@ -3883,6 +3910,56 @@ def cv_oracle_run(request):
         if (len(process) <= 0):
             result["res"] = '流程启动失败，该流程不存在。'
         else:
+            process = process[0]
+            try:
+                config = etree.XML(process.config)
+            except Exception as e:
+                return JsonResponse({
+                    "res": "参数解析错误。"
+                })
+            else:
+                # 将配置文件写
+                backup_host = process.backup_host
+                if backup_host:
+                    backup_ip = backup_host.host_ip
+                    backup_username = backup_host.username
+                    backup_passwd = backup_host.password
+
+                db_name, system, backup_profile = "", "", ""
+                param_els = config.xpath("//param")
+                for param_el in param_els:
+                    variable_name = param_el.attrib.get("variable_name", "")
+                    if variable_name == "db_name":
+                        db_name = param_el.attrib.get("param_value", "")
+                    if variable_name == "backup_profile":
+                        backup_profile = param_el.attrib.get("param_value", "")
+
+                system_els = config.xpath("//config")
+                if system_els:
+                    system = system_els[0].attrib.get("system", "")
+
+                # 上传配置文件
+                try:
+                    port = 22
+                    if system.upper() == "AIX":
+                        port = 20
+                    ssh = paramiko.Transport((backup_ip, port))
+                    ssh.connect(username=backup_username, password=backup_passwd)
+                    sftp = paramiko.SFTPClient.from_transport(ssh)
+                except paramiko.ssh_exception.SSHException as e:
+                    return JsonResponse({
+                        "res": "上传配置文件时，远程连接失败。"
+                    })
+                else:
+                    try:
+                        sftp.put(db2_config_path, "/home/{backup_profile}/{db_name}.txt".format(backup_profile=backup_profile, db_name=db_name))
+                    except FileNotFoundError as e:
+                        return JsonResponse({
+                            "res": "文件不存在。"
+                        })
+                    if ssh:
+                        ssh.close()
+            # return
             running_process = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
             if (len(running_process) > 0):
                 result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
@@ -7538,7 +7615,7 @@ def load_backupset(request):
                     "data": []
                 })
             else:
-                dest_path, origin_client, backup_username, backup_passwd, system = "","","","", ""
+                dest_path, origin_client, backup_username, backup_passwd, system, db_name = "","","","", "", ""
                 param_els = config.xpath("//param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
@@ -7546,13 +7623,22 @@ def load_backupset(request):
                         dest_path = param_el.attrib.get("param_value", "")
                     if variable_name == "origin_client":
                         origin_client = param_el.attrib.get("param_value", "")
-                    if variable_name == "backup_ip":
-                        backup_ip = param_el.attrib.get("param_value", "")
-                    if variable_name == "backup_username":
-                        backup_username = param_el.attrib.get("param_value", "")
-                    if variable_name == "backup_passwd":
-                        backup_passwd = param_el.attrib.get("param_value", "")
-                
+                    if variable_name == "db_name":
+                        db_name = param_el.attrib.get("param_value", "")
+                    # if variable_name == "backup_ip":
+                    #     backup_ip = param_el.attrib.get("param_value", "")
+                    # if variable_name == "backup_username":
+                    #     backup_username = param_el.attrib.get("param_value", "")
+                    # if variable_name == "backup_passwd":
+                    #     backup_passwd = param_el.attrib.get("param_value", "")
+
+                # backup_ip/backup_username/backup_passwd
+                backup_host = process.backup_host
+                if backup_host:
+                    backup_ip = backup_host.host_ip
+                    backup_username = backup_host.username
+                    backup_passwd = backup_host.password
+
                 system_els = config.xpath("//config")
                 if system_els:
                     system = system_els[0].attrib.get("system", "")
@@ -7589,15 +7675,18 @@ def load_backupset(request):
                         server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
                         result = server_obj.run("")
 
-                        com = re.compile("TESUDB/[a-z A-Z 0-9]+/(\d+)/")
-                        ret_list = list(set(com.findall(result["data"])))
+                        if result['exec_tag'] == 0:
+                            com = re.compile("{db_name}/[a-z A-Z 0-9]+/(\d+)/".format(db_name=db_name.upper()))
+                            ret_list = list(set(com.findall(result["data"])))
 
-                        # 构造dataTable数据
-                        for n, r in enumerate(ret_list):
-                            dts_list.append({
-                                "id": n+1,
-                                "bks_time": r
-                            })
+                            # 构造dataTable数据
+                            for n, r in enumerate(ret_list):
+                                dts_list.append({
+                                    "id": n+1,
+                                    "bks_time": r
+                                })
+                        else:
+                            dts_list = []
                 return JsonResponse({
                     "data": dts_list
                 })
@@ -7612,215 +7701,138 @@ def set_rec_config(request):
         # 选择之后，传入process_id/备份集时间 >> 生成/读取配置文件
         # 修改重定向路径/预设增量 >> 重新生成配置文件
 
-        # su - db2inst1 
+        # su - db2inst1
         # cd /home/db2inst1
         # db2 restore db tesudb load /usr/openv/netbackup/bin/nbdb2.so64 taken at 20191205214326 redirect generate script tesudb.txt
         # load_backupset_cmd = "cd {dest_path}&&./bplist -C {origin_client} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
         #     dest_path=dest_path,origin_client=origin_client,backupset_stt=backupset_stt,backupset_edt=backupset_edt
         # )
-        # server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
-        # result = server_obj.run("")
 
-        
-        tmp = """
-        -- *****************************************************************************
-        -- ** automatically created redirect restore script
-        -- *****************************************************************************
-        UPDATE COMMAND OPTIONS USING S ON Z ON TESUDB_NODE0000.out V ON;
-        SET CLIENT ATTACH_DBPARTITIONNUM  0;
-        SET CLIENT CONNECT_DBPARTITIONNUM 0;
-        -- *****************************************************************************
-        -- ** automatically created redirect restore script
-        -- *****************************************************************************
-        RESTORE DATABASE TESUDB
-        -- USER  <username>
-        -- USING '<password>'
-        LOAD '/usr/openv/netbackup/bin/nbdb2.so64'
-        OPEN 4 SESSIONS
-        -- OPTIONS '<options-string>'
-        TAKEN AT 20191205214326
-        -- ON '/home/db2inst1'
-        -- DBPATH ON '<target-directory>'
-        INTO TESUDB
-        -- NEWLOGPATH '/home/db2inst1/db2inst1/NODE0000/SQL00003/SQLOGDIR/'
-        -- WITH <num-buff> BUFFERS
-        -- BUFFER <buffer-size>
-        -- REPLACE HISTORY FILE
-        -- REPLACE EXISTING
-        REDIRECT
-        -- PARALLELISM <n>
-        -- WITHOUT ROLLING FORWARD
-        -- WITHOUT PROMPTING
-        ;
-        -- *****************************************************************************
-        -- ** table space definition
-        -- *****************************************************************************
-        -- *****************************************************************************
-        -- ** Tablespace name                            = SYSCATSPACE
-        -- **   Tablespace ID                            = 0
-        -- **   Tablespace Type                          = Database managed space
-        -- **   Tablespace Content Type                  = All permanent data. Regular table space.
-        -- **   Tablespace Page size (bytes)             = 4096
-        -- **   Tablespace Extent size (pages)           = 4
-        -- **   Using automatic storage                  = Yes
-        -- **   Auto-resize enabled                      = Yes
-        -- **   Total number of pages                    = 24576
-        -- **   Number of usable pages                   = 24572
-        -- **   High water mark (pages)                  = 16632
-        -- *****************************************************************************
-        -- *****************************************************************************
-        -- ** Tablespace name                            = TEMPSPACE1
-        -- **   Tablespace ID                            = 1
-        -- **   Tablespace Type                          = System managed space
-        -- **   Tablespace Content Type                  = System Temporary data
-        -- **   Tablespace Page size (bytes)             = 4096
-        -- **   Tablespace Extent size (pages)           = 32
-        -- **   Using automatic storage                  = Yes
-        -- **   Total number of pages                    = 1
-        -- *****************************************************************************
-        -- *****************************************************************************
-        -- ** Tablespace name                            = USERSPACE1
-        -- **   Tablespace ID                            = 2
-        -- **   Tablespace Type                          = Database managed space
-        -- **   Tablespace Content Type                  = All permanent data. Large table space.
-        -- **   Tablespace Page size (bytes)             = 4096
-        -- **   Tablespace Extent size (pages)           = 32
-        -- **   Using automatic storage                  = Yes
-        -- **   Auto-resize enabled                      = Yes
-        -- **   Total number of pages                    = 8192
-        -- **   Number of usable pages                   = 8160
-        -- **   High water mark (pages)                  = 96
-        -- *****************************************************************************
-        -- *****************************************************************************
-        -- ** Tablespace name                            = SYSTOOLSPACE
-        -- **   Tablespace ID                            = 3
-        -- **   Tablespace Type                          = Database managed space
-        -- **   Tablespace Content Type                  = All permanent data. Large table space.
-        -- **   Tablespace Page size (bytes)             = 4096
-        -- **   Tablespace Extent size (pages)           = 4
-        -- **   Using automatic storage                  = Yes
-        -- **   Auto-resize enabled                      = Yes
-        -- **   Total number of pages                    = 8192
-        -- **   Number of usable pages                   = 8188
-        -- **   High water mark (pages)                  = 144
-        -- *****************************************************************************
-        -- *****************************************************************************
-        -- ** Tablespace name                            = LVTBS
-        -- **   Tablespace ID                            = 4
-        -- **   Tablespace Type                          = Database managed space
-        -- **   Tablespace Content Type                  = All permanent data. Large table space.
-        -- **   Tablespace Page size (bytes)             = 4096
-        -- **   Tablespace Extent size (pages)           = 32
-        -- **   Using automatic storage                  = No
-        -- **   Auto-resize enabled                      = No
-        -- **   Total number of pages                    = 2048
-        -- **   Number of usable pages                   = 2016
-        -- **   High water mark (pages)                  = 288
-        -- *****************************************************************************
-        SET TABLESPACE CONTAINERS FOR 4
-        -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
-        USING (
-        DEVICE '/dev/raw/raw3'                                                    2048
-        );
-        -- *****************************************************************************
-        -- ** Tablespace name                            = LVTBS2
-        -- **   Tablespace ID                            = 5
-        -- **   Tablespace Type                          = Database managed space
-        -- **   Tablespace Content Type                  = All permanent data. Large table space.
-        -- **   Tablespace Page size (bytes)             = 4096
-        -- **   Tablespace Extent size (pages)           = 32
-        -- **   Using automatic storage                  = No
-        -- **   Auto-resize enabled                      = No
-        -- **   Total number of pages                    = 4096
-        -- **   Number of usable pages                   = 4032
-        -- **   High water mark (pages)                  = 160
-        -- *****************************************************************************
-        SET TABLESPACE CONTAINERS FOR 5
-        -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
-        USING (
-        DEVICE '/dev/raw/raw1'                                                    2048
-        , DEVICE '/dev/raw/raw2'                                                    2048
-        );
-        -- *****************************************************************************
-        -- ** Tablespace name                            = LVTBS3
-        -- **   Tablespace ID                            = 6
-        -- **   Tablespace Type                          = Database managed space
-        -- **   Tablespace Content Type                  = All permanent data. Large table space.
-        -- **   Tablespace Page size (bytes)             = 4096
-        -- **   Tablespace Extent size (pages)           = 32
-        -- **   Using automatic storage                  = No
-        -- **   Auto-resize enabled                      = No
-        -- **   Total number of pages                    = 2048
-        -- **   Number of usable pages                   = 2016
-        -- **   High water mark (pages)                  = 160
-        -- *****************************************************************************
-        SET TABLESPACE CONTAINERS FOR 6
-        -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
-        USING (
-        DEVICE '/dev/raw/raw4'                                                    2048
-        );
-        -- *****************************************************************************
-        -- ** start redirected restore
-        -- *****************************************************************************
-        RESTORE DATABASE TESUDB CONTINUE;
-        -- *****************************************************************************
-        -- ** end of file
-        -- *****************************************************************************
-        """
+        try:
+            process_id = int(process_id)
+            process = Process.objects.get(id=process_id)
+        except:
+            pass
+        else:
+            try:
+                config = etree.XML(process.config)
+            except Exception as e:
+                print(e)
+                return JsonResponse({
+                    "ret": 0,
+                    "data": "参数解析错误。"
+                })
+            else:
+                backup_host = process.backup_host
+                if backup_host:
+                    backup_ip = backup_host.host_ip
+                    backup_username = backup_host.username
+                    backup_passwd = backup_host.password
 
-        # 1.拆分
-        f_parts = tmp.split("""
-        -- *****************************************************************************
-        -- *****************************************************************************
-        """)
+                db_name, system, pre_increasement, backup_profile = "", "", "", ""
+                param_els = config.xpath("//param")
+                for param_el in param_els:
+                    variable_name = param_el.attrib.get("variable_name", "")
+                    if variable_name == "db_name":
+                        db_name = param_el.attrib.get("param_value", "")
+                    if variable_name == "backup_profile":
+                        backup_profile = param_el.attrib.get("param_value", "")
+                    if variable_name == "dest_path":
+                        dest_path = param_el.attrib.get("param_value", "")
+                    if variable_name == "pre_increasement":
+                        pre_increasement = param_el.attrib.get("param_value", "")
+                system_els = config.xpath("//config")
+                if system_els:
+                    system = system_els[0].attrib.get("system", "")
+                # 生成配置文件
+                set_rec_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
+                """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, bcs_time=bcs_time)
+                print("生成配置文件命令: %s" % set_rec_config_cmd)
+                server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd), backup_ip, backup_username, backup_passwd, system)
+                set_rec_config_result = server_obj.run("")
 
-        com = re.compile(
-            """(Tablespace name[ ]+=[ ]+[a-z A-Z 0-9]+[\d\D]*?DEVICE[ ]+'[\d\D]*?'[ ]+\d+[\d\D]*?\);)"""
-        )
+                if set_rec_config_result["exec_tag"] == 1:
+                    return JsonResponse({
+                        "ret": 0,
+                        "data": "生成配置文件错误。%s" % set_rec_config_result["data"]
+                    })
 
-        whole_dict = {}
-        whole_dict["all_text"] = tmp
+                # 读取配置文件
+                cat_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&cat {db_name}.txt'
+                """.format(backup_profile=backup_profile, db_name=db_name)
+                print("读取配置文件命令：%s" % cat_config_cmd)
 
-        split_part_list = []
-        # 1.拆分
-        for f_part in f_parts:
-            if "DEVICE" in f_part:
-                # 2.截段
-                tmp_parts = com.findall(f_part)
+                server_obj = ServerByPara(r"{0}".format(cat_config_cmd), backup_ip, backup_username, backup_passwd, system)
+                cat_config_result = server_obj.run("")
 
-                for tmp_part in tmp_parts:
-                    space_part_dict = {}
+                if cat_config_result["exec_tag"] == 1:
+                    return JsonResponse({
+                        "ret": 0,
+                        "data": "读取配置文件出错。%s" % cat_config_result["data"]
+                    })
 
-                    # 表名
-                    space_name = ""
 
-                    # 3.逐行提取
-                    params_parts = tmp_part.split("\n")
+                cat_config_data = cat_config_result["data"].replace("\r\n", "@@@")
+                # 1.拆分
+                f_parts = cat_config_data.split("""-- *****************************************************************************@@@-- *****************************************************************************""")
 
-                    params_list = []
-                    for params_part in params_parts:
-                        params_dict = {}
-                        if "Tablespace name" in params_part:
-                            # 匹配表名
-                            space_com = re.compile(
-                                "[\d\D]*?Tablespace name[ ]+=[ ]+([a-z A-Z 0-9]+)")
-                            space_name = space_com.findall(params_part)[0] if space_com.findall(params_part) else ""
+                com = re.compile(
+                    """(Tablespace name[ ]+=[ ]+[a-z A-Z 0-9]+[\d\D]*?DEVICE[ ]+'[\d\D]*?'[ ]+\d+[\d\D]*?\);)"""
+                )
 
-                        if "DEVICE" in params_part:
-                            device_com = re.compile("DEVICE[ ]+'([\d\D]*?)'[ ]+(\d+)")
-                            params = device_com.findall(params_part)
-                            for p in params:
-                                device_path, capacity = p
-                                params_dict["device_path"] = device_path
-                                params_dict["capacity"] = capacity
-                        if params_dict:
-                            params_list.append(params_dict)
+                whole_dict = {}
+                whole_dict["all_text"] = cat_config_data
 
-                    space_part_dict["space_name"] = space_name
-                    space_part_dict["space_dialog"] = tmp_part
-                    space_part_dict["params_list"] = params_list
-                    split_part_list.append(space_part_dict)
-        whole_dict["split_part_list"] = split_part_list
-        return JsonResponse({"data": whole_dict})
+                split_part_list = []
+                # 1.拆分
+                for f_part in f_parts:
+                    if "DEVICE" in f_part:
+                        # 2.截段
+                        tmp_parts = com.findall(f_part)
+
+                        for tmp_part in tmp_parts:
+                            space_part_dict = {}
+
+                            # 表名
+                            space_name = ""
+
+                            # 3.逐行提取
+                            params_parts = tmp_part.split("@@@")
+
+                            params_list = []
+                            for params_part in params_parts:
+                                params_dict = {}
+                                if "Tablespace name" in params_part:
+                                    # 匹配表名
+                                    space_com = re.compile(
+                                        "[\d\D]*?Tablespace name[ ]+=[ ]+([a-z A-Z 0-9]+)")
+                                    space_name = space_com.findall(params_part)[0] if space_com.findall(params_part) else ""
+
+                                if "DEVICE" in params_part:
+                                    device_com = re.compile("DEVICE[ ]+'([\d\D]*?)'[ ]+(\d+)")
+                                    line_com = re.compile("(DEVICE[ ]+'[\d\D]*?'[ ]+\d+)")
+                                    params = device_com.findall(params_part)
+                                    line_text = line_com.findall(params_part)
+                                    for p in params:
+                                        device_path, capacity = p
+                                        params_dict["device_path"] = device_path
+                                        params_dict["capacity"] = capacity
+                                        # 包含device的行字符
+
+                                        params_dict["line_text"] = line_text[0].strip() if line_text else ""
+                                        params_dict["pre_increasement"] = pre_increasement
+                                if params_dict:
+                                    params_list.append(params_dict)
+
+                            space_part_dict["space_name"] = space_name
+                            space_part_dict["space_dialog"] = tmp_part
+                            space_part_dict["params_list"] = params_list
+                            split_part_list.append(space_part_dict)
+                whole_dict["split_part_list"] = split_part_list
+
+                return JsonResponse({
+                    "ret": 1,
+                    "data": whole_dict
+                })
     else:
         return HttpResponseRedirect("/login")
