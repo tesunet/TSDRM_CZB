@@ -96,7 +96,14 @@ $(document).ready(function () {
 
         $("#system").val(data.system);
         $("#database").val(data.database);
-
+        
+        if (data.database == "db2") {
+            $('#backup_host_div').show();
+            $('#backup_host').val(data.backup_id);
+        } else {
+            $('#backup_host_div').hide();
+            $('#backup_host').val("");
+        }
         // 参数信息      
         $('#param_se').empty();
         var config = JSON.parse(data.config);
@@ -122,6 +129,8 @@ $(document).ready(function () {
 
         $('#backup_host').val('');
         $("#param_se").empty();
+
+        $('#backup_host_div').hide();
         // // 所有固定参数值清空
         // $('#param_se option').each(function () {
         //     var pre_text = $(this).text();

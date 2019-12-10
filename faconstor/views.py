@@ -3514,14 +3514,14 @@ def process_design(request, funid):
 def process_data(request):
     if request.user.is_authenticated():
         result = []
-        all_process = Process.objects.exclude(state="9").filter(type="cv_oracle").order_by("sort").values()
+        all_process = Process.objects.exclude(state="9").filter(type="cv_oracle").order_by("sort")
         if (len(all_process) > 0):
             for process in all_process:
                 system, database, redirect_path, pre_increasement = "", "", "", ""
                 param_list = []
 
                 try:
-                    config = etree.XML(process["config"])
+                    config = etree.XML(process.config)
                     sys_el = config.xpath("//config")
                     if sys_el:
                         sys_el = sys_el[0]
@@ -3539,18 +3539,20 @@ def process_data(request):
                     print(e)
 
                 result.append({
-                    "process_id": process["id"],
-                    "process_code": process["code"],
-                    "process_name": process["name"],
-                    "process_remark": process["remark"],
-                    "process_sign": process["sign"],
-                    "process_rto": process["rto"],
-                    "process_rpo": process["rpo"],
-                    "process_sort": process["sort"],
+                    "process_id": process.id,
+                    "process_code": process.code,
+                    "process_name": process.name,
+                    "process_remark": process.remark,
+                    "process_sign": process.sign,
+                    "process_rto": process.rto,
+                    "process_rpo": process.rpo,
+                    "process_sort": process.sort,
                     "system": system,
+
+                    # 备机ID
+                    "backup_id": process.backup_host.id if process.backup_host else "",
                     "database": database,
                     "config": json.dumps(param_list),
-                    # "process_color": process["color"],
                 })
         return JsonResponse({"data": result})
 
