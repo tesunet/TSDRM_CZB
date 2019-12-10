@@ -595,7 +595,7 @@
         $('#bks_dt tbody').on('click', 'button#select', function () {
             var table = $('#bks_dt').DataTable();
             var bcs_data = table.row($(this).parents('tr')).data();
-
+            $('#loadingModal').modal({ backdrop: 'static', keyboard: false });
             // 选择之后，传入process_id/备份集时间 >> 生成/读取配置文件
             // 修改重定向路径/预设增量 >> 重新生成配置文件
             $.ajax({
@@ -607,6 +607,7 @@
                     bcs_time: bcs_data.bks_time,
                 },
                 success: function (data) {
+                    $('#loadingModal').modal('hide');
                     if (data.ret == 0) {
                         alert(data.data);
                     } else {
