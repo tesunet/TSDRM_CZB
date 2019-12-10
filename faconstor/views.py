@@ -3518,6 +3518,8 @@ def process_data(request):
         if (len(all_process) > 0):
             for process in all_process:
                 system, database, redirect_path, pre_increasement = "", "", "", ""
+                param_list = []
+
                 try:
                     config = etree.XML(process["config"])
                     sys_el = config.xpath("//config")
@@ -3526,7 +3528,6 @@ def process_data(request):
                         system = sys_el.attrib.get("system", "")
                         database = sys_el.attrib.get("database", "")
 
-                    param_list = []
                     param_el = config.xpath("//param")
                     for param in param_el:
                         param_list.append({
