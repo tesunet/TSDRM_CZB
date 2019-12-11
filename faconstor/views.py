@@ -3828,11 +3828,33 @@ def oracle_restore(request, process_id):
                     copy_priority = cur_script.origin.copy_priority
                     db_open = cur_script.origin.db_open
                     break
+        
+        db_name = ""
+        # 数据库名称
+        try:
+            process_id = int(process_id)
+            process = Process.objects.get(id=process_id)
+        except:
+            pass
+        else:
+            try:
+                config = etree.XML(process.config)
+            except Exception as e:
+                print(e)
+                return JsonResponse({
+                    "ret": 0,
+                    "data": "参数解析错误。"
+                })
+            else:
+                database_els = config.xpath("//config")
+                if database_els:
+                    database = database_els[0].attrib.get("database", "")
+
         return render(request, 'oracle_restore.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id, "data_path": data_path,
                        "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
-                       "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open})
+                       "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open, "database": database})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3921,14 +3943,7 @@ def cv_oracle_run(request):
                     "res": "参数解析错误。"
                 })
             else:
-                # 将配置文件写
-                backup_host = process.backup_host
-                if backup_host:
-                    backup_ip = backup_host.host_ip
-                    backup_username = backup_host.username
-                    backup_passwd = backup_host.password
-
-                db_name, system, backup_profile = "", "", ""
+                db_name, system, backup_profile, database = "", "", "", ""
                 param_els = config.xpath("//param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
@@ -3937,32 +3952,42 @@ def cv_oracle_run(request):
                     if variable_name == "backup_profile":
                         backup_profile = param_el.attrib.get("param_value", "")
 
-                system_els = config.xpath("//config")
-                if system_els:
-                    system = system_els[0].attrib.get("system", "")
+                    system_els = config.xpath("//config")
+                    if system_els:
+                        system = system_els[0].attrib.get("system", "")
+                    if system_els:
+                        database = system_els[0].attrib.get("database", "")
 
-                # 上传配置文件
-                try:
-                    port = 22
-                    if system.upper() == "AIX":
-                        port = 20
-                    ssh = paramiko.Transport((backup_ip, port))
-                    ssh.connect(username=backup_username, password=backup_passwd)
-                    sftp = paramiko.SFTPClient.from_transport(ssh)
-                except paramiko.ssh_exception.SSHException as e:
-                    return JsonResponse({
-                        "res": "上传配置文件时，远程连接失败。"
-                    })
-                else:
+                if database == "db2":
+                    # 将配置文件写
+                    backup_host = process.backup_host
+                    if backup_host:
+                        backup_ip = backup_host.host_ip
+                        backup_username = backup_host.username
+                        backup_passwd = backup_host.password
+
+                    # 上传配置文件
                     try:
-                        sftp.put(db2_config_path, "/home/{backup_profile}/{db_name}.txt".format(backup_profile=backup_profile, db_name=db_name))
-                    except FileNotFoundError as e:
+                        port = 22
+                        if system.upper() == "AIX":
+                            port = 20
+                        ssh = paramiko.Transport((backup_ip, port))
+                        ssh.connect(username=backup_username, password=backup_passwd)
+                        sftp = paramiko.SFTPClient.from_transport(ssh)
+                    except paramiko.ssh_exception.SSHException as e:
                         return JsonResponse({
-                            "res": "文件不存在。"
+                            "res": "上传配置文件时，远程连接失败。"
                         })
-                    if ssh:
-                        ssh.close()
-            # return
+                    else:
+                        try:
+                            sftp.put(db2_config_path, "/home/{backup_profile}/{db_name}1234.txt".format(backup_profile=backup_profile, db_name=db_name))
+                        except FileNotFoundError as e:
+                            return JsonResponse({
+                                "res": "文件不存在。"
+                            })
+                        if ssh:
+                            ssh.close()
+            
             running_process = ProcessRun.objects.filter(process=process, state__in=["RUN", "ERROR"])
             if (len(running_process) > 0):
                 result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
@@ -7802,6 +7827,9 @@ def set_rec_config(request):
                             # 3.逐行提取
                             params_parts = tmp_part.split("@@@")
 
+                            # each_part
+                            pre_actual_capacity = ""
+
                             params_list = []
                             for params_part in params_parts:
                                 params_dict = {}
@@ -7824,6 +7852,19 @@ def set_rec_config(request):
 
                                         params_dict["line_text"] = line_text[0].strip() if line_text else ""
                                         params_dict["pre_increasement"] = pre_increasement
+
+                                        params_dict['actual_capacity'] = pre_actual_capacity
+
+                                # 肯定是优先的
+                                # 匹配 High water mark
+                                if 'High water mark' in params_part:
+                                    actual_capacity_com = re.compile("High water mark[\d\D]*?=[ ]+(\d+)")
+                                    actual_capacitys = actual_capacity_com.findall(params_part)
+                                    actual_capacity = ""
+                                    if actual_capacitys:
+                                        actual_capacity = actual_capacitys[0]
+                                    pre_actual_capacity = actual_capacity
+
                                 if params_dict:
                                     params_list.append(params_dict)
 

@@ -119,6 +119,7 @@
                 var cur_config_edit_tr = jQuery(all_config_edit_trs[j]);
                 // 原行信息
                 var line_text = cur_config_edit_tr.attr("line_text");
+                var capacity = cur_config_edit_tr.attr("capacity");
 
                 var space_td = cur_config_edit_tr.find('td:eq(0)').text().trim();
 
@@ -126,16 +127,18 @@
                 if (tmp_dialog_id == space_td) {
                     // 旧数据
                     var pre_config_td = cur_config_edit_tr.find('td:eq(1)').text().trim();
-                    console.log(pre_config_td.split(" "))
                     var pre_device_path = pre_config_td.split(" ")[0];
-                    var pre_capacity = pre_config_td.split(" ")[1];
+                    var actual_capacity = pre_config_td.split(" ")[1];  //..
+
+                    // 2048 pre_capacity
+                    var pre_capacity = capacity;
 
                     // 新数据
                     var aft_device_path = cur_config_edit_tr.find('td:eq(2)').text().trim();
                     var aft_capacity = cur_config_edit_tr.find('td:eq(3)').text().trim();
 
                     // 预设增量+原容量
-                    var c_aft_capacity = Number(pre_capacity.trim()) + Number(aft_capacity.trim());
+                    var c_aft_capacity = Number(actual_capacity.trim()) + Number(aft_capacity.trim());
 
                     if (new_line_text) {
                         new_line_text = new_line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, c_aft_capacity);
@@ -530,7 +533,13 @@
         var backupset_stt = new Date(myDate - 1000 * 60 * 60 * 24 * 30);
         $("#backupset_stt").val(backupset_stt.toLocaleString('zh', { hour12: false }));
 
-        $('#load_backupset').trigger('click');
+        var database = $('#database').val();
+        if (database == "db2"){
+            $('#load_backupset_div').show();
+            $('#load_backupset').trigger('click');
+        } else {
+            $('#load_backupset_div').hide();
+        }
     });
 
     $('#backupset_stt').datetimepicker({
@@ -624,12 +633,12 @@
 
                             for (var j = 0; j < data.data.split_part_list[i].params_list.length; j++) {
                                 $('#config_edit_table tbody').append(
-                                    '<tr id="' + data.data.split_part_list[i].space_name + '" line_text="' + data.data.split_part_list[i].params_list[j].line_text + '">' +
+                                    '<tr id="' + data.data.split_part_list[i].space_name + '" line_text="' + data.data.split_part_list[i].params_list[j].line_text + '" capacity="' + data.data.split_part_list[i].params_list[j].capacity +'">' +
                                     '<td>' +
                                     '<div class="success"></div>' +
                                     '&nbsp&nbsp' + data.data.split_part_list[i].space_name +
                                     '</td>' +
-                                    '<td> ' + data.data.split_part_list[i].params_list[j].device_path + ' ' + data.data.split_part_list[i].params_list[j].capacity + ' </td>' +
+                                    '<td> ' + data.data.split_part_list[i].params_list[j].device_path + ' ' + data.data.split_part_list[i].params_list[j].actual_capacity + ' </td>' +
                                     '<td class="hidden-xs"> ' + data.data.split_part_list[i].params_list[j].device_path + ' </td>' +
                                     '<td> ' + data.data.split_part_list[i].params_list[j].pre_increasement + ' </td>' +
                                     '<td>' +
@@ -673,5 +682,19 @@
             pre_increasement_node.text($('#pre_increasement').val().trim());
             $('#config_static').modal('hide');
         }
+    });
+
+    // 批量修改
+    $('#batch_edit').click(function () {
+        $('#patch_edit_static').modal('show');
+    });
+
+    $('#patch_edit_save').click(function () {
+        var patch_edit_redirect_path = $('#patch_edit_redirect_path').val();
+
+        $('tbody#config_edit_tbody tr').each(function () {
+            $(this).find('td:eq(2)').text(patch_edit_redirect_path);
+        });
+        $('#patch_edit_static').modal('hide');
     });
 });

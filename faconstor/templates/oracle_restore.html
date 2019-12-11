@@ -107,6 +107,7 @@
 
     <input type="text" hidden id="process_id" value="{{ process_id }}">
     <input type="text" hidden id="plan_process_run_id" value="{{ plan_process_run_id }}">
+    <input type="text" hidden id="database" value="{{ database }}">
 
 
 
@@ -144,7 +145,7 @@
 
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" id='load_backupset_div'>
                                 <label class="col-md-2 control-label"><span style="color:red; "></span>开始时间</label>
                                 <div class="col-md-3">
                                     <input id="backupset_stt" type="text" name="backupset_stt" class="form-control" placeholder="">
@@ -171,7 +172,7 @@
                                             <th class="hidden-xs">
                                                 <i class="fa fa-cogs"></i> 原配置 </th>
                                             <th class="hidden-xs">
-                                                <i class="fa fa-folder"></i> 重定向路径 </th>
+                                                <i class="fa fa-folder"></i> 重定向路径   <span><a href="javascript:;" title="批量修改" id='batch_edit'><i class="fa fa-edit"></i></a></span></th>
                                             <th>
                                                 <i class="fa fa-level-up"></i> 预设增量(M) </th>
                                             <th> </th>
@@ -318,7 +319,36 @@
             </div>
         </div>
     </div>
-
+    <div id="patch_edit_static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog" style="width:850px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">批量配置</h4>
+                </div>
+                <div class="panel-body">
+                    <form class="bs-example form-horizontal activate-form">{% csrf_token %}
+                        <div class="form-body">
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>重定向路径</label>
+                                <div class="col-md-10">
+                                    <input id="patch_edit_redirect_path" type="text" name="patch_edit_redirect_path" class="form-control ">
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions ">
+                            <div class="modal-footer">
+                                <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
+                                </button>
+                                <button type="button" id="patch_edit_save" name="patch_edit_save" class="btn green">确认</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="loadingModal" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
         <div class='modal-dialog' style="width: 200px;position: absolute; height:100px;left: 55%; top: 35%;margin-left:-200px;margin-top:-100px;">
             <img src="/static/new/images/loading.gif" alt="">
