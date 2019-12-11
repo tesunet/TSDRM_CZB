@@ -3913,17 +3913,8 @@ def cv_oracle_run(request):
         run_person = request.POST.get('run_person', '')
         run_time = request.POST.get('run_time', '')
         run_reason = request.POST.get('run_reason', '')
-        # 如果是linux\r\n
+        
         new_config = request.POST.get('new_config', '').replace("@@@", "\n")
-
-        # 写入本地文件后传上服务器
-        db2_config_path = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "tmp" + os.sep + "db2.txt"
-
-        try:
-            with open(db2_config_path, "w") as f:
-                f.write(new_config)
-        except:
-            return JsonResponse({"res": "配置文件写入本地失败。"})
 
         try:
             processid = int(processid)
@@ -3959,7 +3950,15 @@ def cv_oracle_run(request):
                         database = system_els[0].attrib.get("database", "")
 
                 if database == "db2":
-                    # 将配置文件写
+                    # 写入本地文件后传上服务器
+                    db2_config_path = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "tmp" + os.sep + "db2.txt"
+
+                    try:
+                        with open(db2_config_path, "w") as f:
+                            f.write(new_config)
+                    except:
+                        return JsonResponse({"res": "配置文件写入本地失败。"})
+
                     backup_host = process.backup_host
                     if backup_host:
                         backup_ip = backup_host.host_ip
@@ -3980,7 +3979,7 @@ def cv_oracle_run(request):
                         })
                     else:
                         try:
-                            sftp.put(db2_config_path, "/home/{backup_profile}/{db_name}1234.txt".format(backup_profile=backup_profile, db_name=db_name))
+                            sftp.put(db2_config_path, "/home/{backup_profile}/{db_name}.txt".format(backup_profile=backup_profile, db_name=db_name))
                         except FileNotFoundError as e:
                             return JsonResponse({
                                 "res": "文件不存在。"
@@ -7772,9 +7771,16 @@ def set_rec_config(request):
                 system_els = config.xpath("//config")
                 if system_els:
                     system = system_els[0].attrib.get("system", "")
+
+                set_rec_config_cmd = ""
                 # 生成配置文件
-                set_rec_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
-                """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, bcs_time=bcs_time)
+                if bcs_time:
+                    set_rec_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
+                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, bcs_time=bcs_time)
+                else:
+                    set_rec_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 redirect generate script {db_name}.txt'
+                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path)   
+
                 print("生成配置文件命令: %s" % set_rec_config_cmd)
                 server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd), backup_ip, backup_username, backup_passwd, system)
                 set_rec_config_result = server_obj.run("")

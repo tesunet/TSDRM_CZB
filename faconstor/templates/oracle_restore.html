@@ -157,7 +157,7 @@
                                     <div class="form-control-focus"></div>
                                 </div>
                                 <div class="col-md-2">
-                                    <input id="load_backupset" type="button" value="加载备份集" class="btn green">
+                                    <input id="load_backupset" type="button" value="重载备份集" class="btn green">
                                 </div>
                             </div>
                             <div class='form-group' id='config_edit_div' hidden>
@@ -174,7 +174,7 @@
                                             <th class="hidden-xs">
                                                 <i class="fa fa-folder"></i> 重定向路径   <span><a href="javascript:;" title="批量修改" id='batch_edit'><i class="fa fa-edit"></i></a></span></th>
                                             <th>
-                                                <i class="fa fa-level-up"></i> 预设增量(M) </th>
+                                                <i class="fa fa-level-up"></i> 预设文件大小(M) </th>
                                             <th> </th>
                                         </tr>
                                     </thead>
@@ -300,7 +300,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-md-2 control-label"><span style="color:red; "></span>预测增量</label>
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>预测文件大小(M)</label>
                                 <div class="col-md-10">
                                     <input id="pre_increasement" type="text" name="pre_increasement" class="form-control">
                                     <div class="form-control-focus"></div>
@@ -319,6 +319,7 @@
             </div>
         </div>
     </div>
+
     <div id="patch_edit_static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog" style="width:850px;">
             <div class="modal-content">
@@ -350,8 +351,8 @@
         </div>
     </div>
     <div id="loadingModal" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
-        <div class='modal-dialog' style="width: 200px;position: absolute; height:100px;left: 55%; top: 35%;margin-left:-200px;margin-top:-100px;">
-            <img src="/static/new/images/loading.gif" alt="">
+        <div class='modal-dialog' style="font-size:25px;color:grey;width: 400px;position: absolute; height:100px;left: 55%; top: 38%;margin-left:-200px;margin-top:-100px;">
+            加载配置中<img src="/static/new/images/loading.gif" alt="">
         </div>
     </div>
 {% endblock %}

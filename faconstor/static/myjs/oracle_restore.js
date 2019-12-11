@@ -137,13 +137,13 @@
                     var aft_device_path = cur_config_edit_tr.find('td:eq(2)').text().trim();
                     var aft_capacity = cur_config_edit_tr.find('td:eq(3)').text().trim();
 
-                    // 预设增量+原容量
-                    var c_aft_capacity = Number(actual_capacity.trim()) + Number(aft_capacity.trim());
+                    // // 预设增量+原容量
+                    // var c_aft_capacity = Number(actual_capacity.trim()) + Number(aft_capacity.trim());
 
                     if (new_line_text) {
-                        new_line_text = new_line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, c_aft_capacity);
+                        new_line_text = new_line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, aft_capacity);
                     } else {
-                        new_line_text = line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, c_aft_capacity);
+                        new_line_text = line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, aft_capacity);
                     }
 
                     if (new_tmp_dialog) {
@@ -535,11 +535,60 @@
 
         var database = $('#database').val();
         if (database == "db2"){
-            $('#load_backupset_div').show();
-            $('#load_backupset').trigger('click');
-        } else {
-            $('#load_backupset_div').hide();
-        }
+            // 立即发起请求
+            // su - db2inst1
+            // cd / home / db2inst1
+            // db2 restore db tesudb load /usr/openv/netbackup/bin/nbdb2.so64 redirect generate script tesudb.txt
+            $('#loadingModal').modal('show');
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                url: "../../set_rec_config/",
+                data: {
+                    process_id: $('#process_id').val(),
+                    bcs_time: "",
+                },
+                success: function (data) {
+                    if (data.ret == 0) {
+                        alert(data.data);
+                    } else {
+                        // 生成配置表格>> 可修改
+                        $('#config_edit_div').show();
+                        $('#config_edit_table tbody').empty();
+                        $('#all_text').val(data.data.all_text);
+                        for (var i = 0; i < data.data.split_part_list.length; i++) {
+                            $('#config_edit_table thead').append(
+                                '<input type="text" id="' + data.data.split_part_list[i].space_name + '_dialog" name="' + data.data.split_part_list[i].space_name + '_dialog" value="' + data.data.split_part_list[i].space_dialog.replace("\\r", "\r").replace("\\n", "\n") + '" hidden>'
+                            );
+                            for (var j = 0; j < data.data.split_part_list[i].params_list.length; j++) {
+                                var pre_file_size = Number(data.data.split_part_list[i].params_list[j].pre_increasement) + Number(data.data.split_part_list[i].params_list[j].actual_capacity);
+
+                                $('#config_edit_table tbody').append(
+                                    '<tr id="' + data.data.split_part_list[i].space_name + '" line_text="' + data.data.split_part_list[i].params_list[j].line_text + '" capacity="' + data.data.split_part_list[i].params_list[j].capacity + '">' +
+                                    '<td>' +
+                                    '<div class="success"></div>' +
+                                    '&nbsp&nbsp' + data.data.split_part_list[i].space_name +
+                                    '</td>' +
+                                    '<td> ' + data.data.split_part_list[i].params_list[j].device_path + ' ' + data.data.split_part_list[i].params_list[j].actual_capacity + ' </td>' +
+                                    '<td class="hidden-xs"> ' + data.data.split_part_list[i].params_list[j].device_path + ' </td>' +
+                                    '<td> ' + pre_file_size + ' </td>' +
+                                    '<td>' +
+                                    '<a href="javascript:;" class="btn btn-outline btn-circle dark btn-sm black">' +
+                                    '<i class="fa fa-edit"></i> 修改 </a>' +
+                                    '</td>' +
+                                    '</tr>'
+                                );
+                            }
+                        }
+                    }
+                    $('#loadingModal').modal('hide');
+                },
+                error: function () {
+                    alert("页面出现错误，请于管理员联系。");
+                }
+            });
+            
+        } 
     });
 
     $('#backupset_stt').datetimepicker({
@@ -632,6 +681,9 @@
                             );
 
                             for (var j = 0; j < data.data.split_part_list[i].params_list.length; j++) {
+
+                                var pre_file_size = Number(data.data.split_part_list[i].params_list[j].pre_increasement) + Number(data.data.split_part_list[i].params_list[j].actual_capacity);
+
                                 $('#config_edit_table tbody').append(
                                     '<tr id="' + data.data.split_part_list[i].space_name + '" line_text="' + data.data.split_part_list[i].params_list[j].line_text + '" capacity="' + data.data.split_part_list[i].params_list[j].capacity +'">' +
                                     '<td>' +
@@ -640,7 +692,7 @@
                                     '</td>' +
                                     '<td> ' + data.data.split_part_list[i].params_list[j].device_path + ' ' + data.data.split_part_list[i].params_list[j].actual_capacity + ' </td>' +
                                     '<td class="hidden-xs"> ' + data.data.split_part_list[i].params_list[j].device_path + ' </td>' +
-                                    '<td> ' + data.data.split_part_list[i].params_list[j].pre_increasement + ' </td>' +
+                                    '<td> ' + pre_file_size + ' </td>' +
                                     '<td>' +
                                     '<a href="javascript:;" class="btn btn-outline btn-circle dark btn-sm black">' +
                                     '<i class="fa fa-edit"></i> 修改 </a>' +

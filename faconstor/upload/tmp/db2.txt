@@ -95,7 +95,7 @@ REDIRECT
 SET TABLESPACE CONTAINERS FOR 4
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
-  DEVICE '/dev/raw/raw3'                                                    4048
+  DEVICE '/dev/raw/raw3'                                                    2288
 );
 -- *****************************************************************************
 -- ** Tablespace name                            = LVTBS2
@@ -113,8 +113,8 @@ USING (
 SET TABLESPACE CONTAINERS FOR 5
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
-  DEVICE '/dev/raw/raw1'                                                    4048
-, DEVICE '/dev/raw/raw2'                                                    4048
+  DEVICE '/dev/raw/raw1'                                                    2160
+, DEVICE '/dev/raw/raw2'                                                    2160
 );
 -- *****************************************************************************
 -- ** Tablespace name                            = LVTBS3
@@ -132,7 +132,7 @@ USING (
 SET TABLESPACE CONTAINERS FOR 6
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
-  DEVICE '/dev/raw/raw4'                                                    4048
+  DEVICE '/dev/raw/raw4'                                                    2160
 );
 -- *****************************************************************************
 -- ** start redirected restore
