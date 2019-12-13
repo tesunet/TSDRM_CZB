@@ -59,11 +59,11 @@ if (App.isAngularJsApp() === false) {
                     };
 
                     // 循环(arguments.callee获取当前执行函数的引用)
-                    setTimeout(arguments.callee, 3000);
+                    setTimeout(arguments.callee, 10000);
                 } else {
                     global_end = false;
                 }
-            }, 3000);
+            }, 10000);
         }
 
         // default run

@@ -122,17 +122,6 @@
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
-                            <div class="form-group" id='backup_host_div' hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; "></span>备机</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="backup_host" name="backup_host">
-                                        {% for host in all_host %}
-                                            <option value="{{host.id}}">{{host.host_name}}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>RTO</label>

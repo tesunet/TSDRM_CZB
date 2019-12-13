@@ -10,6 +10,7 @@ import requests
 import datetime
 from winrm.exceptions import WinRMTransportError, WinRMOperationTimeoutError, WinRMError
 from requests.exceptions import ConnectionError
+import re
 
 
 ###############################################################

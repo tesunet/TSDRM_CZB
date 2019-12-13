@@ -97,13 +97,6 @@ $(document).ready(function () {
         $("#system").val(data.system);
         $("#database").val(data.database);
         
-        if (data.database == "db2") {
-            $('#backup_host_div').show();
-            $('#backup_host').val(data.backup_id);
-        } else {
-            $('#backup_host_div').hide();
-            $('#backup_host').val("");
-        }
         // 参数信息      
         $('#param_se').empty();
         var config = JSON.parse(data.config);
@@ -127,16 +120,7 @@ $(document).ready(function () {
         $("#system").val("");
         $("#database").val("");
 
-        $('#backup_host').val('');
         $("#param_se").empty();
-
-        $('#backup_host_div').hide();
-        // // 所有固定参数值清空
-        // $('#param_se option').each(function () {
-        //     var pre_text = $(this).text();
-        //     var aft_test = pre_text.split(":")[0];
-        //     $(this).text(aft_test + ":");
-        // });
     });
 
     $('#save').click(function () {
@@ -173,7 +157,6 @@ $(document).ready(function () {
 
                 system: $("#system").val(),
                 database: $("#database").val(),
-                backup_host: $('#backup_host').val(),
                 // 重定向路径/目标机安装目录/源机器名/备机用户名/备机密码
                 config: JSON.stringify(params_list)
             },
@@ -317,14 +300,6 @@ $(document).ready(function () {
 
         // $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
         $("#static01").modal("hide");
-    });
-
-    $('#database').change(function(){
-        if ($(this).val()=="db2"){
-            $('#backup_host_div').show();
-        } else {
-            $('#backup_host_div').hide();
-        }
     });
 });
 

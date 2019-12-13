@@ -241,44 +241,56 @@ def test(request):
     if request.user.is_authenticated():
         errors = []
 
-        # 填充原RTO数据
-        all_process_run = ProcessRun.objects.exclude(state="9")
-        for processrun in all_process_run:
-            if processrun.state == "DONE":
-                cur_process = processrun.process
+        from .tasks import format_cmd
 
-                # 正确顺序的父级Step
-                all_pnode_steps = cur_process.step_set.exclude(state="9").filter(pnode_id=None).order_by("sort")
+        processrun = ProcessRun.objects.last()
 
-                correct_step_id_list = []
+        cmd = """
+        cd {{log_start_time}};
+        echo [[backup_profile]]
+        """
 
-                for pnode_step in all_pnode_steps:
-                    correct_step_id_list.append(pnode_step)
-
-                # 正确顺序的父级StepRun
-                correct_step_run_list = []
-
-                for pnode_step in correct_step_id_list:
-                    current_step_run = pnode_step.steprun_set.filter(processrun_id=processrun.id)
-                    if current_step_run.exists():
-                        current_step_run = current_step_run[0]
-                        correct_step_run_list.append(current_step_run)
-                starttime = processrun.starttime
-                rtoendtime = processrun.starttime
-
-                for c_step_run in reversed(correct_step_run_list):
-                    if c_step_run.step.rto_count_in == "1":
-                        rtoendtime = c_step_run.endtime
-                        break
-                delta_time = 0
-                if rtoendtime:
-                    delta_time = (rtoendtime - starttime).total_seconds()
-
-                processrun.rto = delta_time
-                processrun.save()
-            else:
-                processrun.rto = 0
-                processrun.save()
+        c_cmd = format_cmd(cmd, processrun)
+        print(c_cmd)
+        return
+        # # 填充原RTO数据
+        # all_process_run = ProcessRun.objects.exclude(state="9")
+        # for processrun in all_process_run:
+        #     if processrun.state == "DONE":
+        #         cur_process = processrun.process
+        #
+        #         # 正确顺序的父级Step
+        #         all_pnode_steps = cur_process.step_set.exclude(state="9").filter(pnode_id=None).order_by("sort")
+        #
+        #         correct_step_id_list = []
+        #
+        #         for pnode_step in all_pnode_steps:
+        #             correct_step_id_list.append(pnode_step)
+        #
+        #         # 正确顺序的父级StepRun
+        #         correct_step_run_list = []
+        #
+        #         for pnode_step in correct_step_id_list:
+        #             current_step_run = pnode_step.steprun_set.filter(processrun_id=processrun.id)
+        #             if current_step_run.exists():
+        #                 current_step_run = current_step_run[0]
+        #                 correct_step_run_list.append(current_step_run)
+        #         starttime = processrun.starttime
+        #         rtoendtime = processrun.starttime
+        #
+        #         for c_step_run in reversed(correct_step_run_list):
+        #             if c_step_run.step.rto_count_in == "1":
+        #                 rtoendtime = c_step_run.endtime
+        #                 break
+        #         delta_time = 0
+        #         if rtoendtime:
+        #             delta_time = (rtoendtime - starttime).total_seconds()
+        #
+        #         processrun.rto = delta_time
+        #         processrun.save()
+        #     else:
+        #         processrun.rto = 0
+        #         processrun.save()
 
         return render(request, 'test.html',
                       {'username': request.user.userinfo.fullname, "errors": errors})
@@ -499,7 +511,7 @@ def get_process_index_data(request):
                     "tasktime": task.starttime.strftime('%Y-%m-%d %H:%M:%S') if task.starttime else "",
                 })
             # 构造展示步骤
-            process_rate = "%02d" % (done_num / len(current_processrun.steprun_set.all()) * 100)
+            process_rate = "%02d" % (done_num / len(current_processrun.steprun_set.all()) * 100) if current_processrun.steprun_set.all() else 0
             isConfirm = "0"
             confirmStepruns = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id, state='CONFIRM')
             if len(confirmStepruns) > 0:
@@ -3502,14 +3514,11 @@ def get_all_groups(request):
 
 def process_design(request, funid):
     if request.user.is_authenticated():
-
-        # 备机
-        all_host = HostsManage.objects.exclude(state='9')
-
         return render(request, "processdesign.html",
-                      {'username': request.user.userinfo.fullname, "all_host": all_host,
+                      {'username': request.user.userinfo.fullname,
                       "pagefuns": getpagefuns(funid, request=request)})
-
+    else:
+        return HttpResponseRedirect("/login")
 
 def process_data(request):
     if request.user.is_authenticated():
@@ -3550,7 +3559,6 @@ def process_data(request):
                     "system": system,
 
                     # 备机ID
-                    "backup_id": process.backup_host.id if process.backup_host else "",
                     "database": database,
                     "config": json.dumps(param_list),
                 })
@@ -3573,8 +3581,6 @@ def process_save(request):
 
             system = request.POST.get('system', '')
             database = request.POST.get('database', '')
-
-            backup_host = request.POST.get('backup_host', "")
 
             # 重定向路径/目标机安装目录/源机器名/备机用户名/备机密码
             config = request.POST.get("config", "")
@@ -3609,7 +3615,7 @@ def process_save(request):
                                 param_node.attrib["param_name"] = c_config["param_name"].strip()
                                 param_node.attrib["variable_name"] = c_config["variable_name"].strip()
                                 param_node.attrib["param_value"] = c_config["param_value"].strip()
-                        config = etree.tostring(root)
+                        config = etree.tounicode(root)
                         """
                         <root>
                             <config system="Linux" database="db2"/>
@@ -3621,11 +3627,6 @@ def process_save(request):
                             </param_list>
                         </root>
                         """
-                        try:
-                            backup_host = int(backup_host)
-                        except:
-                            pass
-
 
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
@@ -3644,7 +3645,6 @@ def process_save(request):
                                 processsave.rpo = rpo if rpo else None
                                 processsave.sort = sort if sort else None
                                 processsave.color = color
-                                processsave.backup_host_id = backup_host if bakcup_host else None
                                 processsave.config = config
                                 processsave.save()
                                 result["res"] = "保存成功。"
@@ -3665,7 +3665,6 @@ def process_save(request):
                                     processsave.rpo = rpo if rpo else None
                                     processsave.sort = sort if sort else None
                                     processsave.color = color
-                                    processsave.backup_host_id = backup_host if backup_host else None
                                     processsave.config = config
                                     processsave.save()
                                     result["res"] = "保存成功。"
@@ -3828,7 +3827,7 @@ def oracle_restore(request, process_id):
                     copy_priority = cur_script.origin.copy_priority
                     db_open = cur_script.origin.db_open
                     break
-        
+
         db_name = ""
         # 数据库名称
         try:
@@ -3850,11 +3849,13 @@ def oracle_restore(request, process_id):
                 if database_els:
                     database = database_els[0].attrib.get("database", "")
 
+        all_hosts = HostsManage.objects.exclude(state='9')
+
         return render(request, 'oracle_restore.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id, "data_path": data_path,
                        "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
-                       "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open, "database": database})
+                       "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open, "database": database, "all_hosts":all_hosts})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3913,8 +3914,24 @@ def cv_oracle_run(request):
         run_person = request.POST.get('run_person', '')
         run_time = request.POST.get('run_time', '')
         run_reason = request.POST.get('run_reason', '')
-        
+
         new_config = request.POST.get('new_config', '').replace("@@@", "\n")
+
+        # 主机变量
+        main_host = request.POST.get('main_host', '')
+        back_host = request.POST.get('back_host', '')
+
+        # 恢复变量
+        select_time = request.POST.get('select_time', '')
+
+        try:
+            main_host = int(main_host)
+        except ValueError as e:
+            return JsonResponse({"res": "主机不能为空。"})
+        try:
+            back_host = int(back_host)
+        except ValueError as e:
+            return JsonResponse({"res": "备机不能为空。"})
 
         try:
             processid = int(processid)
@@ -3934,14 +3951,14 @@ def cv_oracle_run(request):
                     "res": "参数解析错误。"
                 })
             else:
-                db_name, system, backup_profile, database = "", "", "", ""
+                db_name, system, config_path, database = "", "", "", ""
                 param_els = config.xpath("//param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
                     if variable_name == "db_name":
                         db_name = param_el.attrib.get("param_value", "")
-                    if variable_name == "backup_profile":
-                        backup_profile = param_el.attrib.get("param_value", "")
+                    if variable_name == "config_path":
+                        config_path = param_el.attrib.get("param_value", "")
 
                     system_els = config.xpath("//config")
                     if system_els:
@@ -3949,7 +3966,6 @@ def cv_oracle_run(request):
                     if system_els:
                         database = system_els[0].attrib.get("database", "")
 
-                if database == "db2":
                     # 写入本地文件后传上服务器
                     db2_config_path = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "tmp" + os.sep + "db2.txt"
 
@@ -3959,12 +3975,14 @@ def cv_oracle_run(request):
                     except:
                         return JsonResponse({"res": "配置文件写入本地失败。"})
 
-                    backup_host = process.backup_host
-                    if backup_host:
-                        backup_ip = backup_host.host_ip
-                        backup_username = backup_host.username
-                        backup_passwd = backup_host.password
-
+                    backup_ip, backup_username, backup_passwd = "", "", ""
+                    try:
+                        c_back_host = HostsManage.objects.get(id=back_host)
+                        backup_ip = c_back_host.host_ip
+                        backup_username = c_back_host.username
+                        backup_passwd = c_back_host.password
+                    except Exception as e:
+                        print(e)
                     # 上传配置文件
                     try:
                         port = 22
@@ -3979,7 +3997,14 @@ def cv_oracle_run(request):
                         })
                     else:
                         try:
-                            sftp.put(db2_config_path, "/home/{backup_profile}/{db_name}.txt".format(backup_profile=backup_profile, db_name=db_name))
+                            remote_path = ""
+
+                            if config_path.endswith("/"):
+                                remote_path = config_path + "{db_name}.txt".format(db_name=db_name)
+                            else:
+                                remote_path = config_path + "/{db_name}.txt".format(db_name=db_name)
+
+                            sftp.put(db2_config_path, remote_path)
                         except FileNotFoundError as e:
                             return JsonResponse({
                                 "res": "文件不存在。"
@@ -4001,8 +4026,63 @@ def cv_oracle_run(request):
                     myprocessrun.creatuser = request.user.username
                     myprocessrun.run_reason = run_reason
                     myprocessrun.state = "RUN"
+                    
+                    # 恢复变量/主机变量
+                    # 存入主机变量与恢复变量
+                    c_main_host, c_back_host = "", ""
+                    try:
+                        c_main_host = HostsManage.objects.get(id=main_host)
+                    except:
+                        return JsonResponse({"res": "所选主机不存在。"})
+
+                    try:
+                        c_back_host = HostsManage.objects.get(id=back_host)
+                    except:
+                        return JsonResponse({"res": "所选备机不存在。"})
+
+                    root = etree.Element("root")
+                    # 主机/备机
+                    host_param_list = etree.SubElement(root, "host_param_list")
+                    
+                    host_dict = {
+                        "main_host_name": c_main_host.host_name,
+                        "main_host_username": c_main_host.username,
+                        "main_host_ip": c_main_host.host_ip,
+                        "main_host_passwd": c_main_host.password,
+                        "back_host_name": c_back_host.host_name,
+                        "back_host_username": c_back_host.username,
+                        "back_host_ip": c_back_host.host_ip,
+                        "back_host_passwd": c_back_host.password,
+                    }
+                    
+                    for k, v in host_dict.items():
+                        param = etree.SubElement(host_param_list, "param")
+                        param.attrib["variable_name"] = k
+                        param.attrib["param_value"] = v
+                    
+                    # 恢复变量
+                    restore_param_list = etree.SubElement(root, "restore_param_list")
+
+
+                    select_strp_time = datetime.datetime.strptime(select_time, "%Y/%m/%d %H:%M:%S")
+                    log_start_time = select_strp_time - datetime.timedelta(days=1)
+                    log_end_time = select_strp_time + datetime.timedelta(days=1)
+                    # 指定时间点/前2天 日志开始时间 日志结束时间
+                    restore_param_dict = {
+                        "select_time": select_strp_time.strftime("%m/%d/%Y %H:%M:%S"),
+                        "log_start_time": log_start_time.strftime("%m/%d/%Y %H:%M:%S"),
+                        "log_end_time": log_end_time.strftime("%m/%d/%Y %H:%M:%S"),
+                    }
+                    
+                    for k, v in restore_param_dict.items():
+                        param = etree.SubElement(restore_param_list, "param")
+                        param.attrib["variable_name"] = k
+                        param.attrib["param_value"] = v
+                    config = etree.tounicode(root)
+                    myprocessrun.config = config
 
                     myprocessrun.save()
+
                     mystep = process.step_set.exclude(state="9").order_by("sort")
                     if (len(mystep) <= 0):
                         result["res"] = '流程启动失败，没有找到可用步骤。'
@@ -4218,6 +4298,9 @@ def getchildrensteps(processrun, curstep):
         runresult = ""
         explain = ""
         state = ""
+        group = ""
+        note = ""
+        rto = 0
         steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step=step)
         if len(steprunlist) > 0:
             runid = steprunlist[0].id
@@ -7611,11 +7694,10 @@ def process_schedule_del(request):
 
 def load_backupset(request):
     if request.user.is_authenticated():
-        # 'process_id': ['17'], 'backupset_edt': ['2019/12/6 16:06:19'], 'backupset_stt': ['2019/11/6 16:06:19']
+        # 'process_id': ['17'], 'backupset_edt': ['2019/12/6 16:06:19']
         process_id = request.GET.get("process_id", "")
-        backupset_stt = request.GET.get("backupset_stt", "")
         backupset_edt = request.GET.get("backupset_edt", "")
-
+        back_id = request.GET.get("back_id", "")
         try:
             process_id = int(process_id)
         except ValueError as e:
@@ -7642,7 +7724,7 @@ def load_backupset(request):
                     "data": []
                 })
             else:
-                dest_path, origin_client, backup_username, backup_passwd, system, db_name = "","","","", "", ""
+                dest_path, origin_client, backup_ip, backup_username, backup_passwd, system, db_name = "","","","", "", "", ""
                 param_els = config.xpath("//param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
@@ -7652,19 +7734,16 @@ def load_backupset(request):
                         origin_client = param_el.attrib.get("param_value", "")
                     if variable_name == "db_name":
                         db_name = param_el.attrib.get("param_value", "")
-                    # if variable_name == "backup_ip":
-                    #     backup_ip = param_el.attrib.get("param_value", "")
-                    # if variable_name == "backup_username":
-                    #     backup_username = param_el.attrib.get("param_value", "")
-                    # if variable_name == "backup_passwd":
-                    #     backup_passwd = param_el.attrib.get("param_value", "")
 
                 # backup_ip/backup_username/backup_passwd
-                backup_host = process.backup_host
-                if backup_host:
-                    backup_ip = backup_host.host_ip
-                    backup_username = backup_host.username
-                    backup_passwd = backup_host.password
+                try:
+                    back_id = int(back_id)
+                    c_back_host = HostsManage.objects.get(id=back_id)
+                    backup_ip = c_back_host.host_ip
+                    backup_username = c_back_host.username
+                    backup_passwd = c_back_host.password
+                except Exception as e:
+                    print(e)
 
                 system_els = config.xpath("//config")
                 if system_els:
@@ -7684,20 +7763,19 @@ def load_backupset(request):
                 # </root>
 
                 dts_list = []
-                if all([dest_path, origin_client, backupset_stt, backupset_edt]):
+                if all([dest_path, origin_client, backupset_edt]):
                     # 固定参数名称: dest_path/origin_client/backup_username/backup_passwd
 
                     # 修改时间格式 %m/%d/%Y %H:%M:%S
                     try:
-                        backupset_stt = datetime.datetime.strptime(backupset_stt, "%Y/%m/%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
-                        backupset_edt = datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
-                        # backupset_stt = "11/28/2019 20:00:00"
-                        # backupset_edt = "12/06/2019 22:57:14"
+                        # backupset_edt 前两天
+                        c_backupset_stt = (datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S") - datetime.timedelta(days=30)).strftime("%m/%d/%Y %H:%M:%S")
+                        c_backupset_edt = datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
                     except:
                         pass
                     else:
                         load_backupset_cmd = "cd {dest_path}&&./bplist -C {origin_client} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
-                            dest_path=dest_path,origin_client=origin_client,backupset_stt=backupset_stt,backupset_edt=backupset_edt
+                            dest_path=dest_path,origin_client=origin_client,backupset_stt=c_backupset_stt,backupset_edt=c_backupset_edt
                         )
                         server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
                         result = server_obj.run("")
@@ -7706,12 +7784,25 @@ def load_backupset(request):
                             com = re.compile("{db_name}/[a-z A-Z 0-9]+/(\d+)/".format(db_name=db_name.upper()))
                             ret_list = list(set(com.findall(result["data"])))
 
-                            # 构造dataTable数据
+                            pre_bks_time = ""
+                            # 构造dataTable数据 
                             for n, r in enumerate(ret_list):
-                                dts_list.append({
-                                    "id": n+1,
-                                    "bks_time": r
-                                })
+                                # 对r进行处理,离当前时间最近的默认勾选
+                                strp_r = datetime.datetime.strptime(r, "%Y%m%d%H%M%S")
+
+                                if strp_r < datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S"):
+                                    dts_list.append({
+                                        "bks_time": r,
+                                        "tag": ""
+                                    })
+
+                            # >> 备份集的排序
+                            dts_list = sorted(dts_list,  key=lambda x:datetime.datetime.strptime(x["bks_time"], "%Y%m%d%H%M%S"))
+                            for n, dts in enumerate(dts_list):
+                                dts["id"] = n+1
+
+                            dts_list = dts_list[-3:]
+                            dts_list[-1]["tag"] = "last"
                         else:
                             dts_list = []
                 return JsonResponse({
@@ -7725,6 +7816,7 @@ def set_rec_config(request):
     if request.user.is_authenticated():
         process_id = request.POST.get("process_id", "")
         bcs_time = request.POST.get("bcs_time", "")
+        back_id = request.POST.get("back_id", "")
         # 选择之后，传入process_id/备份集时间 >> 生成/读取配置文件
         # 修改重定向路径/预设增量 >> 重新生成配置文件
 
@@ -7750,13 +7842,17 @@ def set_rec_config(request):
                     "data": "参数解析错误。"
                 })
             else:
-                backup_host = process.backup_host
-                if backup_host:
-                    backup_ip = backup_host.host_ip
-                    backup_username = backup_host.username
-                    backup_passwd = backup_host.password
+                backup_ip, backup_username, backup_passwd = "", "", ""
+                try:
+                    back_id = int(back_id)
+                    c_back_host = HostsManage.objects.get(id=back_id)
+                    backup_ip = c_back_host.host_ip
+                    backup_username = c_back_host.username
+                    backup_passwd = c_back_host.password
+                except Exception as e:
+                    print(e)
 
-                db_name, system, pre_increasement, backup_profile = "", "", "", ""
+                db_name, system, pre_increasement, backup_profile, config_path = "", "", "", "", ""
                 param_els = config.xpath("//param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
@@ -7768,6 +7864,8 @@ def set_rec_config(request):
                         dest_path = param_el.attrib.get("param_value", "")
                     if variable_name == "pre_increasement":
                         pre_increasement = param_el.attrib.get("param_value", "")
+                    if variable_name == "config_path":
+                        config_path = param_el.attrib.get("param_value", "")
                 system_els = config.xpath("//config")
                 if system_els:
                     system = system_els[0].attrib.get("system", "")
@@ -7775,11 +7873,11 @@ def set_rec_config(request):
                 set_rec_config_cmd = ""
                 # 生成配置文件
                 if bcs_time:
-                    set_rec_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
-                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, bcs_time=bcs_time)
+                    set_rec_config_cmd = """su - {backup_profile} -c 'cd {config_path}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
+                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, bcs_time=bcs_time, config_path=config_path)
                 else:
-                    set_rec_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 redirect generate script {db_name}.txt'
-                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path)   
+                    set_rec_config_cmd = """su - {backup_profile} -c 'cd {config_path}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 redirect generate script {db_name}.txt'
+                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, config_path=config_path)
 
                 print("生成配置文件命令: %s" % set_rec_config_cmd)
                 server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd), backup_ip, backup_username, backup_passwd, system)
@@ -7792,8 +7890,8 @@ def set_rec_config(request):
                     })
 
                 # 读取配置文件
-                cat_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&cat {db_name}.txt'
-                """.format(backup_profile=backup_profile, db_name=db_name)
+                cat_config_cmd = """su - {backup_profile} -c 'cd {config_path}&&cat {db_name}.txt'
+                """.format(backup_profile=backup_profile, db_name=db_name, config_path=config_path)
                 print("读取配置文件命令：%s" % cat_config_cmd)
 
                 server_obj = ServerByPara(r"{0}".format(cat_config_cmd), backup_ip, backup_username, backup_passwd, system)

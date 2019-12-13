@@ -108,6 +108,7 @@
     <input type="text" hidden id="process_id" value="{{ process_id }}">
     <input type="text" hidden id="plan_process_run_id" value="{{ plan_process_run_id }}">
     <input type="text" hidden id="database" value="{{ database }}">
+    <input type="text" hidden id="bst_status">
 
 
 
@@ -145,20 +146,43 @@
 
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>主机</label>
+                                <div class="col-md-4">
+                                    <select name="main_host" id="main_host" class='form-control'>
+                                        {% for host in all_hosts %}
+                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                            
+                                </div>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>备机</label>
+                                <div class="col-md-4">
+                                    <select name="back_host" id="back_host" class='form-control'>
+                                        {% for host in all_hosts %}
+                                        <option value="{{ host.id }}">{{ host.host_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                
+                                </div>
+                            </div>
                             <div class="form-group" id='load_backupset_div'>
-                                <label class="col-md-2 control-label"><span style="color:red; "></span>开始时间</label>
+                                <!-- <label class="col-md-2 control-label"><span style="color:red; "></span>开始时间</label>
                                 <div class="col-md-3">
                                     <input id="backupset_stt" type="text" name="backupset_stt" class="form-control" placeholder="">
                                     <div class="form-control-focus"></div>
-                                </div>
-                                <label class="col-md-2 control-label"><span style="color:red; "></span>结束时间</label>
+                                </div> -->
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>选择时间</label>
                                 <div class="col-md-3">
                                     <input id="backupset_edt" type="text" name="backupset_edt" class="form-control" placeholder="">
                                     <div class="form-control-focus"></div>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-2" hidden>
                                     <input id="load_backupset" type="button" value="重载备份集" class="btn green">
                                 </div>
+                                <div class="col-md-5"></div>
                             </div>
                             <div class='form-group' id='config_edit_div' hidden>
                                 <label class="col-md-2 control-label"><span style="color:red; "></span>配置修改</label>
@@ -179,23 +203,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id='config_edit_tbody'>
-                                        <!-- <input type="text" id='LVTBS1_dialog' name='LVTBS1_dialog' hidden>
 
-                                        <tr>
-                                            <td class="highlight">
-                                                <div class="success"></div>
-                                                &nbsp&nbsp {{device_path}}
-                                            </td>
-                                            <td> 2000 </td>
-
-                                            <td class="hidden-xs"> Mike NilsonMike NilsonMike NilsonMike Nilson </td>
-                                            <td> 2000 </td>
-                                            <td>
-                                                <a href="javascript:;" class="btn btn-outline btn-circle dark btn-sm black">
-                                                    <i class="fa fa-edit"></i> Edit </a>
-                                            </td>
-                                        </tr>
-                                        -->
                                     </tbody>
                                 </table>
                                 </div>
@@ -271,12 +279,19 @@
                             <tr>
                                 <th style="width:40px;"> 序号</th>
                                 <th> 备份集时间点</th>
-                                <th style="width:50px;"> 操作</th>
+                                <th style="width:50px;"> 状态</th>
                             </tr>
                         </thead>
                         <tbody>
                         </tbody>
                     </table>
+                </div>
+                <div class="form-actions">
+                    <div class="modal-footer">
+                        <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
+                        </button>
+                        <button type="button" id="select_config" name="select_config" class="btn green">确认</button>
+                    </div>
                 </div>
             </div>
         </div>

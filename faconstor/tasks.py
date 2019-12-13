@@ -17,6 +17,7 @@ from .api import SQLApi
 import subprocess
 from lxml import etree
 from .remote import ServerByPara
+import re
 
 
 def is_connection_usable():
@@ -473,6 +474,25 @@ def runstep(steprun, if_repeat=False):
                         tmp_cmd = r"cat > {0} << \EOH".format(
                             linux_temp_script_file
                         ) + "\n" + script.script.script_text + "\nEOH"
+
+                        # Linux上传脚本时，修改cmd
+                        tmp_cmd = format_cmd(tmp_cmd, processrun)
+
+                        if not tmp_cmd:
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun = steprun.processrun
+                            myprocesstask.starttime = datetime.datetime.now(
+                            )
+                            myprocesstask.senduser = steprun.processrun.creatuser
+                            myprocesstask.receiveauth = steprun.step.group
+                            myprocesstask.type = "ERROR"
+                            myprocesstask.logtype = "SCRIPT"
+                            myprocesstask.state = "0"
+                            myprocesstask.content = "脚本" + script_name + "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                            myprocesstask.steprun_id = steprun.id
+                            myprocesstask.save()
+                            return 0
+                            
                         tmp_obj = remote.ServerByPara(tmp_cmd, ip, username,
                                                       password, system_tag)
                         tmp_result = tmp_obj.run("")
@@ -556,6 +576,24 @@ def runstep(steprun, if_repeat=False):
                             else:
                                 tmp_cmd = r"""echo {0}>>{1}""".format(
                                     content, windows_temp_script_file)
+
+                            # windows上传脚本的cmd修改
+                            tmp_cmd = format_cmd(tmp_cmd, processrun)
+
+                            if not tmp_cmd:
+                                myprocesstask = ProcessTask()
+                                myprocesstask.processrun = steprun.processrun
+                                myprocesstask.starttime = datetime.datetime.now(
+                                )
+                                myprocesstask.senduser = steprun.processrun.creatuser
+                                myprocesstask.receiveauth = steprun.step.group
+                                myprocesstask.type = "ERROR"
+                                myprocesstask.logtype = "SCRIPT"
+                                myprocesstask.state = "0"
+                                myprocesstask.content = "脚本" + script_name + "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                                myprocesstask.steprun_id = steprun.id
+                                myprocesstask.save()
+                                return 0
 
                             tmp_obj = remote.ServerByPara(
                                 tmp_cmd, ip, username, password, system_tag)
@@ -953,7 +991,6 @@ def create_process_run(*args, **kwargs):
                     """.format(backup_profile=backup_profile,
                                 db_name=db_name,
                                 dest_path=dest_path)
-
                     server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd),
                                             backup_ip, backup_username,
                                             backup_passwd, system)
@@ -1026,6 +1063,72 @@ def create_process_run(*args, **kwargs):
                     myprocesstask.save()
 
                     exec_process.delay(myprocessrun.id)
+
+
+
+def format_cmd(cmd, processrun):
+    # 恢复变量/主机变量
+    pr_config = ""
+    pre_pr_config = "<root></root>"
+    if processrun.config:
+        pr_config = etree.XML(processrun.config)
+    else:
+        pr_config = etree.XML(pre_pr_config)
+
+    pr_params = pr_config.xpath("//param")
+    print('pr_params%s'%pr_params)
+    # 预案变量
+    p_config = ""
+    pre_p_config = "<root></root>"
+    if processrun.process.config:
+        p_config = etree.XML(processrun.process.config)
+    else:
+        p_config = etree.XML(pre_p_config)
+
+    p_params = p_config.xpath("//param")
+    # 页面参数
+    #   预案变量 [[??]]
+    #   恢复变量/主机变量 {{??}}
+    process_vb_com = re.compile("\[\[(.*?)\]\]")
+    rcv_host_com = re.compile("\{\{(.*?)\}\}")
+
+    process_vbs = process_vb_com.findall(cmd)
+    rcv_hosts = rcv_host_com.findall(cmd)
+    print(process_vbs, rcv_hosts)
+    final_cmd = ''
+
+    for process_vb in process_vbs:
+        for p in p_params:
+            variable_name = p.attrib.get('variable_name', '')
+            param_value = p.attrib.get('param_value', '')
+            if process_vb == variable_name:
+                if final_cmd:
+                    final_cmd = final_cmd.replace("[[%s]]"% process_vb, param_value)
+                else:
+                    final_cmd = cmd.replace("[[%s]]"% process_vb, param_value)
+
+    for rcv_host in rcv_hosts:
+        for pr in pr_params:
+            variable_name = pr.attrib.get('variable_name', '')
+            param_value = pr.attrib.get('param_value', '')
+            print("%s %s" % (rcv_host, variable_name))
+            if rcv_host == variable_name:
+                if final_cmd:
+                    final_cmd = final_cmd.replace(
+                        "{{%s}}" % rcv_host, param_value)
+                else:
+                    print("----------%s"%cmd)
+                    final_cmd = cmd.replace("{{%s}}"% rcv_host, param_value)
+                    print("----------%s" % final_cmd)
+
+    # 检测参数是否全部替换
+    aft_process_vbs = process_vb_com.findall(final_cmd)
+    aft_rcv_hosts = rcv_host_com.findall(final_cmd)
+
+    if any([aft_process_vbs, aft_rcv_hosts]):
+        return None
+
+    return final_cmd if final_cmd else cmd
 
 
 # @shared_task

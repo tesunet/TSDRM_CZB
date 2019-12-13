@@ -7,7 +7,11 @@ from djcelery import models as djmodels
 
 
 class Fun(models.Model):
-    pnode = models.ForeignKey('self', blank=True, null=True, related_name='children', verbose_name='父节点')
+    pnode = models.ForeignKey('self',
+                              blank=True,
+                              null=True,
+                              related_name='children',
+                              verbose_name='父节点')
     name = models.CharField("功能名称", max_length=100)
     sort = models.IntegerField("排序", blank=True, null=True)
     type = models.CharField("类型", blank=True, null=True, max_length=20)
@@ -24,19 +28,30 @@ class Group(models.Model):
 
 
 class UserInfo(models.Model):
-    user = models.OneToOneField(User, blank=True, null=True, )
+    user = models.OneToOneField(
+        User,
+        blank=True,
+        null=True,
+    )
     userGUID = models.CharField("GUID", null=True, max_length=50)
     fullname = models.CharField("姓名", blank=True, max_length=50)
     phone = models.CharField("电话", blank=True, null=True, max_length=50)
     group = models.ManyToManyField(Group)
-    pnode = models.ForeignKey('self', blank=True, null=True, related_name='children', verbose_name='父节点')
+    pnode = models.ForeignKey('self',
+                              blank=True,
+                              null=True,
+                              related_name='children',
+                              verbose_name='父节点')
     type = models.CharField("类型", blank=True, null=True, max_length=20)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     sort = models.IntegerField("排序", blank=True, null=True)
     remark = models.TextField("说明", blank=True, null=True)
     company = models.CharField("公司", blank=True, null=True, max_length=100)
     tell = models.CharField("电话", blank=True, null=True, max_length=50)
-    forgetpassword = models.CharField("修改密码地址", blank=True, null=True, max_length=50)
+    forgetpassword = models.CharField("修改密码地址",
+                                      blank=True,
+                                      null=True,
+                                      max_length=50)
 
 
 class Process(models.Model):
@@ -51,14 +66,21 @@ class Process(models.Model):
     url = models.CharField("页面链接", blank=True, max_length=100)
     type = models.CharField("预案类型", blank=True, max_length=100, null=True)
     color = models.CharField("颜色", blank=True, max_length=50)
-    config = models.TextField("XML格式存放系统/数据库预置信息", blank=True, null=True)
-    backup_host = models.ForeignKey('HostsManage', blank=True, null=True, verbose_name='备机')
+    config = models.TextField("XML格式存放预案变量/系统数据库信息", blank=True, null=True)
 
 
 class Step(models.Model):
     process = models.ForeignKey(Process)
-    last = models.ForeignKey('self', blank=True, null=True, related_name='next', verbose_name='上一步')
-    pnode = models.ForeignKey('self', blank=True, null=True, related_name='children', verbose_name='父节点')
+    last = models.ForeignKey('self',
+                             blank=True,
+                             null=True,
+                             related_name='next',
+                             verbose_name='上一步')
+    pnode = models.ForeignKey('self',
+                              blank=True,
+                              null=True,
+                              related_name='children',
+                              verbose_name='父节点')
     code = models.CharField("步骤编号", blank=True, null=True, max_length=50)
     name = models.CharField("步骤名称", blank=True, null=True, max_length=50)
     approval = models.CharField("是否审批", blank=True, null=True, max_length=10)
@@ -67,44 +89,63 @@ class Step(models.Model):
     time = models.IntegerField("预计耗时", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=10)
     sort = models.IntegerField("排序", blank=True, null=True)
-    rto_count_in = models.CharField("是否算入RTO", blank=True, null=True, max_length=10, default="1")
-    remark = models.CharField("备注", blank=True, null=True, max_length=500, help_text="告知业务人员灾备环境地址等信息")
-    force_exec_choices = (
-        (1, "是"),
-        (2, "否")
-    )
-    force_exec = models.IntegerField("流程关闭时强制执行", choices=force_exec_choices, null=True, default=2)
+    rto_count_in = models.CharField("是否算入RTO",
+                                    blank=True,
+                                    null=True,
+                                    max_length=10,
+                                    default="1")
+    remark = models.CharField("备注",
+                              blank=True,
+                              null=True,
+                              max_length=500,
+                              help_text="告知业务人员灾备环境地址等信息")
+    force_exec_choices = ((1, "是"), (2, "否"))
+    force_exec = models.IntegerField("流程关闭时强制执行",
+                                     choices=force_exec_choices,
+                                     null=True,
+                                     default=2)
 
 
 # 客户端管理
 class Target(models.Model):
     client_id = models.IntegerField("终端client_id", blank=True, null=True)
-    client_name = models.CharField("终端client_name", blank=True, null=True, max_length=128)
+    client_name = models.CharField("终端client_name",
+                                   blank=True,
+                                   null=True,
+                                   max_length=128)
     info = models.TextField("客户端相关信息", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     os = models.CharField("系统", blank=True, null=True, max_length=50)
 
 
 class Origin(models.Model):
-    target = models.ForeignKey(Target, blank=True, null=True, verbose_name="默认关联终端")
+    target = models.ForeignKey(Target,
+                               blank=True,
+                               null=True,
+                               verbose_name="默认关联终端")
     client_id = models.IntegerField("源端client_id", blank=True, null=True)
-    client_name = models.CharField("源端client_name", blank=True, null=True, max_length=128)
+    client_name = models.CharField("源端client_name",
+                                   blank=True,
+                                   null=True,
+                                   max_length=128)
     info = models.TextField("客户端相关信息", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     os = models.CharField("系统", blank=True, null=True, max_length=50)
-    copy_priority_choices = (
-        (1, "主拷贝"),
-        (2, "辅助拷贝")
-    )
-    copy_priority = models.IntegerField(
-        "拷贝优先级：1：主拷贝；2：辅助拷贝", blank=True, null=True, default=1, choices=copy_priority_choices)
-    data_path = models.CharField("数据文件重定向路径", blank=True, default="", max_length=512)
-    db_open_choices = (
-        (1, "是"),
-        (2, "否")
-    )
-    db_open = models.IntegerField(
-        "是否恢复完成后打开数据库：1：默认打开数据库；2：不打开数据库", null=True, default=1, choices=db_open_choices)
+    copy_priority_choices = ((1, "主拷贝"), (2, "辅助拷贝"))
+    copy_priority = models.IntegerField("拷贝优先级：1：主拷贝；2：辅助拷贝",
+                                        blank=True,
+                                        null=True,
+                                        default=1,
+                                        choices=copy_priority_choices)
+    data_path = models.CharField("数据文件重定向路径",
+                                 blank=True,
+                                 default="",
+                                 max_length=512)
+    db_open_choices = ((1, "是"), (2, "否"))
+    db_open = models.IntegerField("是否恢复完成后打开数据库：1：默认打开数据库；2：不打开数据库",
+                                  null=True,
+                                  default=1,
+                                  choices=db_open_choices)
 
 
 class HostsManage(models.Model):
@@ -118,21 +159,42 @@ class HostsManage(models.Model):
 
 
 class Script(models.Model):
-    hosts_manage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='主机管理')
+    hosts_manage = models.ForeignKey(HostsManage,
+                                     blank=True,
+                                     null=True,
+                                     verbose_name='主机管理')
     step = models.ForeignKey(Step, blank=True, null=True)
     code = models.CharField("脚本编号", blank=True, max_length=50)
     name = models.CharField("脚本名称", blank=True, max_length=500)
     filename = models.CharField("脚本文件名", blank=True, null=True, max_length=50)
-    scriptpath = models.CharField("脚本文件路径", blank=True, null=True, max_length=100)
+    scriptpath = models.CharField("脚本文件路径",
+                                  blank=True,
+                                  null=True,
+                                  max_length=100)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     sort = models.IntegerField("排序", blank=True, null=True)
-    succeedtext = models.CharField("成功代码", blank=True, null=True, max_length=500)
-    log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
+    succeedtext = models.CharField("成功代码",
+                                   blank=True,
+                                   null=True,
+                                   max_length=500)
+    log_address = models.CharField("日志地址",
+                                   blank=True,
+                                   null=True,
+                                   max_length=100)
     script_text = models.TextField("脚本内容", blank=True, default="")
     # commvault接口
-    interface_type = models.CharField("日志地址", blank=True, null=True, max_length=32)
-    origin = models.ForeignKey(Origin, blank=True, null=True, verbose_name='源端客户端')
-    commv_interface = models.CharField("commvault接口脚本", blank=True, null=True, max_length=64)
+    interface_type = models.CharField("日志地址",
+                                      blank=True,
+                                      null=True,
+                                      max_length=32)
+    origin = models.ForeignKey(Origin,
+                               blank=True,
+                               null=True,
+                               verbose_name='源端客户端')
+    commv_interface = models.CharField("commvault接口脚本",
+                                       blank=True,
+                                       null=True,
+                                       max_length=64)
 
 
 class ProcessRun(models.Model):
@@ -143,16 +205,29 @@ class ProcessRun(models.Model):
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     run_reason = models.TextField("启动原因", blank=True, null=True)
     note = models.TextField("记录", blank=True, null=True)
-    target = models.ForeignKey(Target, blank=True, null=True, verbose_name="oracle恢复流程指定目标客户端")
+    target = models.ForeignKey(Target,
+                               blank=True,
+                               null=True,
+                               verbose_name="oracle恢复流程指定目标客户端")
     recover_time = models.DateTimeField("指定恢复时间点", blank=True, null=True)
-    browse_job_id = models.CharField("指点时间点的备份任务ID", blank=True, null=True, max_length=50)
-    data_path = models.CharField("数据重定向路径", blank=True, null=True, max_length=512)
-    copy_priority = models.IntegerField("优先拷贝顺序", blank=True, default=1, null=True)
+    browse_job_id = models.CharField("指点时间点的备份任务ID",
+                                     blank=True,
+                                     null=True,
+                                     max_length=50)
+    data_path = models.CharField("数据重定向路径",
+                                 blank=True,
+                                 null=True,
+                                 max_length=512)
+    copy_priority = models.IntegerField("优先拷贝顺序",
+                                        blank=True,
+                                        default=1,
+                                        null=True)
     origin = models.CharField("源客户端", blank=True, null=True, max_length=256)
     curSCN = models.BigIntegerField("当前备份nextSCN-1", blank=True, null=True)
     db_open = models.IntegerField("是否打开数据库", default=1, null=True)
 
     rto = models.IntegerField("流程RTO", default=0, null=True)
+    config = models.TextField("恢复变量/主机变量", blank=True, null=True)
 
 
 class StepRun(models.Model):
@@ -187,7 +262,10 @@ class ProcessTask(models.Model):
     starttime = models.DateTimeField("发送时间", blank=True, null=True)
     senduser = models.CharField("发送人", blank=True, null=True, max_length=50)
     receiveuser = models.CharField("接收人", blank=True, null=True, max_length=50)
-    receiveauth = models.CharField("接收角色", blank=True, null=True, max_length=50)
+    receiveauth = models.CharField("接收角色",
+                                   blank=True,
+                                   null=True,
+                                   max_length=50)
     operator = models.CharField("操作人", blank=True, null=True, max_length=50)
     endtime = models.DateTimeField("处理时间", blank=True, null=True)
     type = models.CharField("任务类型", blank=True, null=True, max_length=20)
@@ -208,7 +286,10 @@ class VerifyItemsRun(models.Model):
     verify_items = models.ForeignKey(VerifyItems)
     steprun = models.ForeignKey(StepRun, blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=30)
-    has_verified = models.CharField("是否确认", blank=True, null=True, max_length=20)
+    has_verified = models.CharField("是否确认",
+                                    blank=True,
+                                    null=True,
+                                    max_length=20)
 
 
 class Invitation(models.Model):
@@ -235,7 +316,9 @@ class Vendor(models.Model):
 
 
 class ProcessSchedule(models.Model):
-    dj_periodictask = models.OneToOneField(djmodels.PeriodicTask, null=True, verbose_name="定时任务")
+    dj_periodictask = models.OneToOneField(djmodels.PeriodicTask,
+                                           null=True,
+                                           verbose_name="定时任务")
     process = models.ForeignKey(Process, null=True, verbose_name="流程预案")
     name = models.CharField("流程计划名称", blank=True, null=True, max_length=256)
     remark = models.TextField("计划说明", null=True, blank=True)
@@ -245,5 +328,6 @@ class ProcessSchedule(models.Model):
         (2, "每周"),
         (3, "每月"),
     )
-    schedule_type = models.IntegerField(choices=schedule_type_choices, default=1, null=True)
-
+    schedule_type = models.IntegerField(choices=schedule_type_choices,
+                                        default=1,
+                                        null=True)
