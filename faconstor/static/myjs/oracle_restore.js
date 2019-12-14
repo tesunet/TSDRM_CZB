@@ -113,7 +113,7 @@
             var all_config_edit_trs = $('#config_edit_tbody').find('tr');
 
             for (var j = 0; j < all_config_edit_trs.length; j++) {
-                var new_line_text = "";
+                // var new_line_text = "";
 
                 var cur_config_edit_tr = jQuery(all_config_edit_trs[j]);
                 // 原行信息
@@ -127,7 +127,7 @@
                     // 旧数据
                     var pre_config_td = cur_config_edit_tr.find('td:eq(1)').text().trim();
                     var pre_device_path = pre_config_td.split(" ")[0];
-                    var actual_capacity = pre_config_td.split(" ")[1];  //..
+                    // var actual_capacity = pre_config_td.split(" ")[1];  //..
 
                     // 2048 pre_capacity
                     var pre_capacity = capacity;
@@ -139,12 +139,13 @@
                     // // 预设增量+原容量
                     // var c_aft_capacity = Number(actual_capacity.trim()) + Number(aft_capacity.trim());
 
-                    if (new_line_text) {
-                        new_line_text = new_line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, aft_capacity);
-                    } else {
+                    var new_line_text = '';
+                    // 当前tr的display为node的替换成空
+                    if (cur_config_edit_tr.css('display') != "none"){
                         new_line_text = line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, aft_capacity);
-                    }
+                    } 
 
+                    // 替换段落内行数据
                     if (new_tmp_dialog) {
                         new_tmp_dialog = new_tmp_dialog.replace(line_text, new_line_text)
                     } else {
@@ -158,7 +159,6 @@
                 new_all_text = all_text.replace(tmp_dialog, new_tmp_dialog)
             }
         }
-
         // 非邀请流程启动
         $.ajax({
             type: "POST",
@@ -666,6 +666,10 @@
                     $('#config_edit_table tbody').empty();
                     $('#all_text').val(data.data.all_text);
                     // $('#all_text').val(data.data.all_text.replace("\\r", "\r").replace("\\n", "\n"));
+
+                    var pre_space_name_list = [];
+                    var pre_space_name = '';
+
                     for (var i = 0; i < data.data.split_part_list.length; i++) {
                         $('#config_edit_table thead').append(
                             '<input type="text" id="' + data.data.split_part_list[i].space_name + '_dialog" name="' + data.data.split_part_list[i].space_name + '_dialog" value="' + data.data.split_part_list[i].space_dialog.replace("\\r", "\r").replace("\\n", "\n") + '" hidden>'
@@ -675,22 +679,34 @@
 
                             var pre_file_size = Number(data.data.split_part_list[i].params_list[j].pre_increasement) + Number(data.data.split_part_list[i].params_list[j].actual_capacity);
 
+                            // 第一个space_name >> pre_space_name_list添加有重复项的space_name
+                            if (pre_space_name == data.data.split_part_list[i].space_name && pre_space_name_list.indexOf(data.data.split_part_list[i].space_name) == -1){
+                                pre_space_name_list.push(pre_space_name);
+                            } else {
+                                pre_space_name = data.data.split_part_list[i].space_name;
+                            }
+
                             $('#config_edit_table tbody').append(
                                 '<tr id="' + data.data.split_part_list[i].space_name + '" line_text="' + data.data.split_part_list[i].params_list[j].line_text + '" capacity="' + data.data.split_part_list[i].params_list[j].capacity + '">' +
                                 '<td>' +
-                                '<div class="success"></div>' +
-                                '&nbsp&nbsp' + data.data.split_part_list[i].space_name +
+                                '&nbsp&nbsp' + data.data.split_part_list[i].space_name + 
                                 '</td>' +
                                 '<td> ' + data.data.split_part_list[i].params_list[j].device_path + ' ' + data.data.split_part_list[i].params_list[j].actual_capacity + ' </td>' +
                                 '<td class="hidden-xs"> ' + data.data.split_part_list[i].params_list[j].device_path + ' </td>' +
                                 '<td> ' + pre_file_size + ' </td>' +
                                 '<td>' +
-                                '<a href="javascript:;" class="btn btn-outline btn-circle dark btn-sm black">' +
+                                '<a href="javascript:;" class="btn btn-outline btn-circle dark btn-sm black" name="edit_config">' +
                                 '<i class="fa fa-edit"></i> 修改 </a>' +
                                 '</td>' +
                                 '</tr>'
                             );
                         }
+                    }
+
+                    // 重复项首个添加图案 '  <span><a href="javascript:;" title="合并" name="merge"><i class="fa fa-plus-square-o"></i></a></span>';fa fa-minus-square-o
+                    $('#config_edit_table tbody').find('tr');
+                    for (var i = 0; i < pre_space_name_list.length; i++){
+                        $('#config_edit_table tbody').find('tr[id="' + pre_space_name_list[i] + '"]:eq(0)').find('td:eq(0)').html('&nbsp&nbsp' + pre_space_name_list[i] + '  <span><a href="javascript:;" title="合并" name="merge"><i class="fa fa-minus-square-o"></i></a></span>');
                     }
                 }
             },
@@ -702,11 +718,41 @@
         $('#bst_static').modal('hide');
     });
 
+    // 合并
+    $('#config_edit_table tbody').on('click', 'a[name="merge"]', function () {
+        // 判断当前是合并还是分开
+        var td_node = $(this).parent().parent();
+
+        var merge_icon = td_node.find('i').prop('class');
+        var space_name = td_node.text().trim();
+
+        if (merge_icon == "fa fa-minus-square-o"){
+            // 合并
+            td_node.html('&nbsp&nbsp' + space_name + '  <span><a href="javascript:;" title="展开" name="merge"><i class="fa fa-plus-square-o"></i></a></span>');
+            // 该节点后面的所有同space_name的节点都隐藏
+            td_node.parent().nextAll().each(function () {
+                if ($(this).find('td:eq(0)').text().trim() == space_name){
+                    $(this).css('display', "none");
+                } 
+            });
+        } else {
+            // 拆分
+            td_node.html('&nbsp&nbsp' + space_name + '  <span><a href="javascript:;" title="合并" name="merge"><i class="fa fa-minus-square-o"></i></a></span>');
+            // 该节点后面的所有同space_name的节点都展示
+            td_node.parent().nextAll().each(function () {
+                if ($(this).find('td:eq(0)').text().trim() == space_name) {
+                    $(this).css('display', "table-row");
+                }
+            });
+        }
+    })
+
+
     var direct_node = '',
         pre_increasement_node = "";
 
     // 选择修改
-    $('#config_edit_table tbody').on('click', 'a', function () {
+    $('#config_edit_table tbody').on('click', 'a[name="edit_config"]', function () {
         // 点击弹出模态框
         $('#config_static').modal('show');
 

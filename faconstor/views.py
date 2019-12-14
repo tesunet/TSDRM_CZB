@@ -4000,9 +4000,9 @@ def cv_oracle_run(request):
                             remote_path = ""
 
                             if config_path.endswith("/"):
-                                remote_path = config_path + "{db_name}.txt".format(db_name=db_name)
+                                remote_path = config_path + "{db_name}1234.txt".format(db_name=db_name)
                             else:
-                                remote_path = config_path + "/{db_name}.txt".format(db_name=db_name)
+                                remote_path = config_path + "/{db_name}1234.txt".format(db_name=db_name)
 
                             sftp.put(db2_config_path, remote_path)
                         except FileNotFoundError as e:
@@ -4011,7 +4011,7 @@ def cv_oracle_run(request):
                             })
                         if ssh:
                             ssh.close()
-            
+                            
             running_process = ProcessRun.objects.filter(process=process, state__in=["RUN", "ERROR"])
             if (len(running_process) > 0):
                 result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
@@ -7945,7 +7945,7 @@ def set_rec_config(request):
 
                                 if "DEVICE" in params_part:
                                     device_com = re.compile("DEVICE[ ]+'([\d\D]*?)'[ ]+(\d+)")
-                                    line_com = re.compile("(DEVICE[ ]+'[\d\D]*?'[ ]+\d+)")
+                                    line_com = re.compile("(.*?DEVICE[ ]+'[\d\D]*?'[ ]+\d+)")
                                     params = device_com.findall(params_part)
                                     line_text = line_com.findall(params_part)
                                     for p in params:
