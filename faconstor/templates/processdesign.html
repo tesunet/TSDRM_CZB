@@ -152,6 +152,79 @@
 
                                 </div>
                             </div>
+                            <div id="db2_fixed_params">
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span><b>预设参数</b></label>
+                                    <div class="col-md-10">
+                                        <hr>
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>目标机NBU安装目录</label>
+                                    <div class="col-md-10">
+                                        <input id="dest_path" type="text" name="dest_path" class="form-control"
+                                               placeholder="">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>数据库名</label>
+                                    <div class="col-md-10">
+                                        <input id="db_name" type="text" name="db_name" class="form-control"
+                                               placeholder="">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>预设增量(Page)</label>
+                                    <div class="col-md-10">
+                                        <input id="pre_increasement" type="number" name="pre_increasement" class="form-control"
+                                               placeholder="">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>备机用户</label>
+                                    <div class="col-md-10">
+                                        <input id="backup_profile" type="text" name="backup_profile" class="form-control"
+                                               placeholder="">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>重定向配置文件路径</label>
+                                    <div class="col-md-10">
+                                        <input id="config_path" type="text" name="config_path" class="form-control"
+                                               placeholder="">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>归档日志路径</label>
+                                    <div class="col-md-10">
+                                        <input id="log_path" type="text" name="log_path" class="form-control"
+                                               placeholder="">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; "></span><b>动态参数</b></label>
+                                <div class="col-md-10">
+                                    <hr>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
                             <div class="form-group ">
                                 <label class="col-md-2 control-label">参数配置</label>
                                 <div class="col-md-10">
@@ -162,7 +235,8 @@
                                             <li><a tabindex="-1">删除</a></li>
                                         </ul>
                                     </div>
-                                    <button hidden id="param_edit" tabindex="-1" data-toggle="modal" data-target="#static01"></button>
+                                    <button hidden id="param_edit" tabindex="-1" data-toggle="modal"
+                                            data-target="#static01"></button>
                                     <select id="param_se" size="7" class="form-control" style="overflow-y:auto;">
                                         <!-- <option value="dest_path">目标机安装目录:</option>
                                         <option value="origin_client">源机器名:</option>

@@ -5,16 +5,16 @@ $(document).ready(function () {
         "bProcessing": true,
         "ajax": "../process_data/",
         "columns": [
-            { "data": "process_id" },
-            { "data": "process_code" },
-            { "data": "process_name" },
-            { "data": "process_remark" },
-            { "data": "process_sign" },
-            { "data": "process_rto" },
-            { "data": "process_rpo" },
-            { "data": "process_sort" },
+            {"data": "process_id"},
+            {"data": "process_code"},
+            {"data": "process_name"},
+            {"data": "process_remark"},
+            {"data": "process_sign"},
+            {"data": "process_rto"},
+            {"data": "process_rpo"},
+            {"data": "process_sort"},
             // { "data": "process_color" },
-            { "data": null }
+            {"data": null}
         ],
 
         "columnDefs": [{
@@ -63,15 +63,14 @@ $(document).ready(function () {
                 type: "POST",
                 url: "../process_del/",
                 data:
-                {
-                    id: data.process_id,
-                },
+                    {
+                        id: data.process_id,
+                    },
                 success: function (data) {
                     if (data == 1) {
                         table.ajax.reload();
                         alert("删除成功！");
-                    }
-                    else
+                    } else
                         alert("删除失败，请于管理员联系。");
                 },
                 error: function (e) {
@@ -96,12 +95,24 @@ $(document).ready(function () {
 
         $("#system").val(data.system);
         $("#database").val(data.database);
-        
-        // 参数信息      
+
+        if (data.database == "db2") {
+            $('#db2_fixed_params').show();
+            $("#dest_path").val(data.dest_path);
+            $("#db_name").val(data.db_name);
+            $("#pre_increasement").val(data.pre_increasement);
+            $("#backup_profile").val(data.backup_profile);
+            $("#config_path").val(data.config_path);
+            $("#log_path").val(data.log_path);
+        } else {
+            $('#db2_fixed_params').hide();
+        }
+
+        // 动态参数
         $('#param_se').empty();
-        var config = JSON.parse(data.config);
-        for (var i = 0; i < config.length; i++) {
-            $('#param_se').append('<option value="' + config[i].variable_name + '">' + config[i].param_name + ': ' + config[i].param_value + '</option>');
+        var variable_param_list = JSON.parse(data.variable_param_list);
+        for (var i = 0; i < variable_param_list.length; i++) {
+            $('#param_se').append('<option value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ': ' + variable_param_list[i].param_value + '</option>');
         }
 
     });
@@ -121,13 +132,44 @@ $(document).ready(function () {
         $("#database").val("");
 
         $("#param_se").empty();
+
+        $('#db2_fixed_params').hide();
+
+
+        $('#dest_path').val("");
+        $('#db_name').val("");
+        $('#pre_increasement').val("");
+        $('#backup_profile').val("");
+        $('#config_path').val("");
+        $('#log_path').val("");
     });
+
+    $("#database").change(function () {
+        var database = $(this).val();
+        if (database == 'db2') {
+            $('#db2_fixed_params').show();
+        } else {
+            $('#db2_fixed_params').hide();
+        }
+    });
+
 
     $('#save').click(function () {
         var table = $('#sample_1').DataTable();
 
-        var params_list = []
-        // 构造参数Map>> Array
+        var params_list = [];
+
+
+        // 固定参数
+        var dest_path = $('#dest_path').val();
+        var db_name = $('#db_name').val();
+        var pre_increasement = $('#pre_increasement').val();
+        var backup_profile = $('#backup_profile').val();
+        var config_path = $('#config_path').val();
+        var log_path = $('#log_path').val();
+
+
+        // 构造参数Map>> Array (动态参数)
         $('#param_se option').each(function () {
             // 构造单个参数信息
             var txt_param_list = $(this).text().split(":");
@@ -136,7 +178,7 @@ $(document).ready(function () {
                 "param_name": txt_param_list[0],
                 "variable_name": val_param,
                 "param_value": txt_param_list[1]
-            }
+            };
             params_list.push(param_dict)
         });
 
@@ -158,7 +200,15 @@ $(document).ready(function () {
                 system: $("#system").val(),
                 database: $("#database").val(),
                 // 重定向路径/目标机安装目录/源机器名/备机用户名/备机密码
-                config: JSON.stringify(params_list)
+                config: JSON.stringify(params_list),
+
+                // 固定参数
+                dest_path: dest_path,
+                db_name: db_name,
+                pre_increasement: pre_increasement,
+                backup_profile: backup_profile,
+                config_path: config_path,
+                log_path: log_path,
             },
             success: function (data) {
                 var myres = data["res"];
@@ -266,7 +316,7 @@ $(document).ready(function () {
                     }
                 }
 
-            } 
+            }
             if ($(e.target).text() == "删除") {
                 $('#param_operate').val('delete');
                 if ($("#param_se").find('option:selected').length == 0)
@@ -286,10 +336,10 @@ $(document).ready(function () {
         var param_name = $('#param_name').val();
         var variable_name = $('#variable_name').val();
         var param_value = $('#param_value').val();
-        if (param_operate == "new"){
-            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value +'</option>');
-        } 
-        if (param_operate == "edit"){
+        if (param_operate == "new") {
+            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
+        }
+        if (param_operate == "edit") {
             // 指定value的option修改text
             $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
         }

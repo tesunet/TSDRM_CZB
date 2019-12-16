@@ -13,7 +13,7 @@ RESTORE DATABASE TESUDB
 LOAD '/usr/openv/netbackup/bin/nbdb2.so64'
 OPEN 4 SESSIONS
 -- OPTIONS '<options-string>'
-TAKEN AT 20191205214326
+TAKEN AT 20191214133138
 -- ON '/home/db2inst1'
 -- DBPATH ON '<target-directory>'
 INTO TESUDB
@@ -41,7 +41,7 @@ REDIRECT
 -- **   Auto-resize enabled                      = Yes     
 -- **   Total number of pages                    = 24576
 -- **   Number of usable pages                   = 24572
--- **   High water mark (pages)                  = 16632
+-- **   High water mark (pages)                  = 17688
 -- *****************************************************************************
 -- *****************************************************************************
 -- ** Tablespace name                            = TEMPSPACE1
@@ -77,7 +77,7 @@ REDIRECT
 -- **   Auto-resize enabled                      = Yes     
 -- **   Total number of pages                    = 8192
 -- **   Number of usable pages                   = 8188
--- **   High water mark (pages)                  = 144
+-- **   High water mark (pages)                  = 152
 -- *****************************************************************************
 -- *****************************************************************************
 -- ** Tablespace name                            = LVTBS
@@ -90,12 +90,12 @@ REDIRECT
 -- **   Auto-resize enabled                      = No      
 -- **   Total number of pages                    = 2048
 -- **   Number of usable pages                   = 2016
--- **   High water mark (pages)                  = 288
+-- **   High water mark (pages)                  = 352
 -- *****************************************************************************
 SET TABLESPACE CONTAINERS FOR 4
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
-  DEVICE '/dev/raw/raw3'                                                    2288
+  FILE '/home/db2inst1/tesudb_test/raw3'                                                    2352
 );
 -- *****************************************************************************
 -- ** Tablespace name                            = LVTBS2
@@ -113,8 +113,8 @@ USING (
 SET TABLESPACE CONTAINERS FOR 5
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
-  DEVICE '/dev/raw/raw1'                                                    2160
-, DEVICE '/dev/raw/raw2'                                                    2160
+  FILE '/home/db2inst1/tesudb_test/raw1'                                                    2160
+
 );
 -- *****************************************************************************
 -- ** Tablespace name                            = LVTBS3
@@ -132,8 +132,18 @@ USING (
 SET TABLESPACE CONTAINERS FOR 6
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
-  DEVICE '/dev/raw/raw4'                                                    2160
+  FILE '/home/db2inst1/tesudb_test/raw4'                                                    2160
 );
+-- *****************************************************************************
+-- ** Tablespace name                            = SYSTOOLSTMPSPACE
+-- **   Tablespace ID                            = 7
+-- **   Tablespace Type                          = System managed space                        
+-- **   Tablespace Content Type                  = User Temporary data                         
+-- **   Tablespace Page size (bytes)             = 4096
+-- **   Tablespace Extent size (pages)           = 4
+-- **   Using automatic storage                  = Yes     
+-- **   Total number of pages                    = 1
+-- *****************************************************************************
 -- *****************************************************************************
 -- ** start redirected restore
 -- *****************************************************************************

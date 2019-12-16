@@ -438,7 +438,8 @@ def get_process_index_data(request):
                     all_done_step_list = []
                     for step in all_steps:
                         step_id = step.id
-                        done_step_run = StepRun.objects.filter(step_id=step_id,processrun_id=processrun_id).filter(state="DONE")
+                        done_step_run = StepRun.objects.filter(step_id=step_id, processrun_id=processrun_id).filter(
+                            state="DONE")
                         if done_step_run.exists():
                             all_done_step_list.append(done_step_run[0])
 
@@ -511,7 +512,8 @@ def get_process_index_data(request):
                     "tasktime": task.starttime.strftime('%Y-%m-%d %H:%M:%S') if task.starttime else "",
                 })
             # 构造展示步骤
-            process_rate = "%02d" % (done_num / len(current_processrun.steprun_set.all()) * 100) if current_processrun.steprun_set.all() else 0
+            process_rate = "%02d" % (done_num / len(
+                current_processrun.steprun_set.all()) * 100) if current_processrun.steprun_set.all() else 0
             isConfirm = "0"
             confirmStepruns = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id, state='CONFIRM')
             if len(confirmStepruns) > 0:
@@ -1012,7 +1014,8 @@ def get_monitor_data(request):
 
         # 演练日志
         task_list = []
-        all_process_tasks = ProcessTask.objects.filter(logtype__in=["ERROR", "STOP", "END", "START"]).order_by("-starttime").select_related("processrun", "processrun__process")
+        all_process_tasks = ProcessTask.objects.filter(logtype__in=["ERROR", "STOP", "END", "START"]).order_by(
+            "-starttime").select_related("processrun", "processrun__process")
         for num, process_task in enumerate(all_process_tasks):
             if num == 50:
                 break
@@ -1032,7 +1035,8 @@ def get_monitor_data(request):
         all_processes = Process.objects.exclude(state="9").filter(type="cv_oracle")
         has_run_process = 0
         for process in all_processes:
-            process_run = process.processrun_set.exclude(state__in=["9", "REJECT"]).filter(starttime__startswith=datetime.datetime.now().date())
+            process_run = process.processrun_set.exclude(state__in=["9", "REJECT"]).filter(
+                starttime__startswith=datetime.datetime.now().date())
             if process_run.exists():
                 has_run_process += 1
 
@@ -1040,7 +1044,7 @@ def get_monitor_data(request):
                 if process_run.last().state == "RUN":
                     running_job += 1
 
-                if process_run.last().state=="DONE":
+                if process_run.last().state == "DONE":
                     success_job += 1
 
         not_running = 0
@@ -1057,7 +1061,8 @@ def get_monitor_data(request):
         drill_monitor = []
 
         for process in all_processes:
-            today_process_run = process.processrun_set.exclude(state__in=["9", "REJECT"]).filter(starttime__startswith=datetime.datetime.now().date())
+            today_process_run = process.processrun_set.exclude(state__in=["9", "REJECT"]).filter(
+                starttime__startswith=datetime.datetime.now().date())
 
             if today_process_run:
                 today_process_run = today_process_run.last()
@@ -1169,7 +1174,6 @@ def get_clients_status(request):
         return HttpResponseRedirect("/login")
 
 
-
 def get_process_run_rto(processrun):
     ########################################################
     # 构造出正确顺序的父级步骤RTO，                         #
@@ -1219,7 +1223,7 @@ def get_process_run_facts(request):
         #######################################################
         cv_oracle_process_list = []
 
-        all_process = Process.objects.exclude(state="9").order_by("sort").filter(type="cv_oracle").\
+        all_process = Process.objects.exclude(state="9").order_by("sort").filter(type="cv_oracle"). \
             prefetch_related("processrun_set", "step_set", "step_set__script_set", "step_set__script_set__origin")
 
         for cur_process in all_process:
@@ -3294,7 +3298,8 @@ def custom_step_tree(request):
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title,
                                 "rto_count_in": rootnode.rto_count_in, "remark": rootnode.remark,
-                                "verifyitems": verify_items_string, "force_exec": rootnode.force_exec if rootnode.force_exec else 2}
+                                "verifyitems": verify_items_string,
+                                "force_exec": rootnode.force_exec if rootnode.force_exec else 2}
                 root["children"] = get_step_tree(rootnode, selectid)
                 root["state"] = {"opened": True}
                 treedata.append(root)
@@ -3516,9 +3521,10 @@ def process_design(request, funid):
     if request.user.is_authenticated():
         return render(request, "processdesign.html",
                       {'username': request.user.userinfo.fullname,
-                      "pagefuns": getpagefuns(funid, request=request)})
+                       "pagefuns": getpagefuns(funid, request=request)})
     else:
         return HttpResponseRedirect("/login")
+
 
 def process_data(request):
     if request.user.is_authenticated():
@@ -3527,7 +3533,10 @@ def process_data(request):
         if (len(all_process) > 0):
             for process in all_process:
                 system, database, redirect_path, pre_increasement = "", "", "", ""
-                param_list = []
+                variable_param_list = []
+
+                # 固定参数
+                dest_path, db_name, pre_increasement, backup_profile, config_path, log_path = "", "", "", "", "", ""
 
                 try:
                     config = etree.XML(process.config)
@@ -3537,13 +3546,32 @@ def process_data(request):
                         system = sys_el.attrib.get("system", "")
                         database = sys_el.attrib.get("database", "")
 
-                    param_el = config.xpath("//param")
-                    for param in param_el:
-                        param_list.append({
-                            "param_name": param.attrib.get("param_name", ""),
-                            "variable_name": param.attrib.get("variable_name", ""),
-                            "param_value": param.attrib.get("param_value", ""),
+                    variable_param_el = config.xpath("//variable_param_list/param")
+                    for v_param in variable_param_el:
+                        variable_param_list.append({
+                            "param_name": v_param.attrib.get("param_name", ""),
+                            "variable_name": v_param.attrib.get("variable_name", ""),
+                            "param_value": v_param.attrib.get("param_value", ""),
                         })
+
+                    if database == "db2":
+                        # 固定参数
+                        fixed_param_el = config.xpath("//fixed_param_list/param")
+                        for f_param in fixed_param_el:
+                            variable_name = f_param.attrib.get("variable_name", "")
+                            if variable_name == "dest_path":
+                                dest_path = f_param.attrib.get("param_value", "")
+                            if variable_name == "db_name":
+                                db_name = f_param.attrib.get("param_value", "")
+                            if variable_name == "pre_increasement":
+                                pre_increasement = f_param.attrib.get("param_value", "")
+                            if variable_name == "backup_profile":
+                                backup_profile = f_param.attrib.get("param_value", "")
+                            if variable_name == "config_path":
+                                config_path = f_param.attrib.get("param_value", "")
+                            if variable_name == "log_path":
+                                log_path = f_param.attrib.get("param_value", "")
+
                 except Exception as e:
                     print(e)
 
@@ -3560,7 +3588,15 @@ def process_data(request):
 
                     # 备机ID
                     "database": database,
-                    "config": json.dumps(param_list),
+                    "variable_param_list": json.dumps(variable_param_list),
+
+                    # 固定参数
+                    "dest_path": dest_path,
+                    "db_name": db_name,
+                    "pre_increasement": pre_increasement,
+                    "backup_profile": backup_profile,
+                    "config_path": config_path,
+                    "log_path": log_path
                 })
         return JsonResponse({"data": result})
 
@@ -3581,6 +3617,23 @@ def process_save(request):
 
             system = request.POST.get('system', '')
             database = request.POST.get('database', '')
+
+            # 固定参数
+            dest_path = request.POST.get('dest_path', '')
+            db_name = request.POST.get('db_name', '')
+            pre_increasement = request.POST.get('pre_increasement', '')
+            backup_profile = request.POST.get('backup_profile', '')
+            config_path = request.POST.get('config_path', '')
+            log_path = request.POST.get('log_path', '')
+
+            fixed_param_dict = {
+                "dest_path": dest_path,
+                "db_name": db_name,
+                "pre_increasement": pre_increasement,
+                "backup_profile": backup_profile,
+                "config_path": config_path,
+                "log_path": log_path,
+            }
 
             # 重定向路径/目标机安装目录/源机器名/备机用户名/备机密码
             config = request.POST.get("config", "")
@@ -3608,10 +3661,18 @@ def process_save(request):
                         system_node.attrib["system"] = system
                         system_node.attrib["database"] = database
 
+                        # 固定参数
+                        fixed_param_list_node = etree.SubElement(root, "fixed_param_list")
+                        for k, v in fixed_param_dict.items():
+                            f_param_node = etree.SubElement(fixed_param_list_node, "param")
+                            f_param_node.attrib["variable_name"] = k.strip()
+                            f_param_node.attrib["param_value"] = v.strip()
+
                         if config:
-                            param_list_node = etree.SubElement(root, "param_list")
+                            # 动态参数
+                            variable_param_list_node = etree.SubElement(root, "variable_param_list")
                             for c_config in config:
-                                param_node = etree.SubElement(param_list_node, "param")
+                                param_node = etree.SubElement(variable_param_list_node, "param")
                                 param_node.attrib["param_name"] = c_config["param_name"].strip()
                                 param_node.attrib["variable_name"] = c_config["variable_name"].strip()
                                 param_node.attrib["param_value"] = c_config["param_value"].strip()
@@ -3619,12 +3680,24 @@ def process_save(request):
                         """
                         <root>
                             <config system="Linux" database="db2"/>
-                            <param_list>
-                                <param param_name="&#30446;&#26631;&#23433;&#35013;&#30446;&#24405;" variable_name=" /usr/openv/netbackup/bin/" param_value="dest_path"/>
-                                <param param_name="&#28304;&#26426;&#22120;&#21517;" variable_name=" db2-std" param_value="origin_client"/>
-                                <param param_name="&#22791;&#26426;&#29992;&#25143;&#21517;" variable_name=" root" param_value="backup_username"/>
-                                <param param_name="&#22791;&#26426;&#23494;&#30721;" variable_name=" password" param_value="backup_passwd"/>
-                            </param_list>
+                            <fixed_param_list>
+                                <param param_name="目标机NBU安装目录" variable_name="dest_path" param_value="/usr/openv/netbackup/bin/"/>
+                                <param param_name="数据库名" variable_name="db_name" param_value="tesudb"/>
+                                <param param_name="预设增量(Page)" variable_name="pre_increasement" param_value="2000"/>
+                                <param param_name="备机用户" variable_name="backup_profile" param_value="db2inst1"/>
+                                <param param_name="重定向配置文件路径" variable_name="config_path" param_value="/home/db2inst1"/>
+                                <param param_name="归档日志路径" variable_name="log_path" param_value="/home/db2inst1/arch"/>
+                            </fixed_param_list>
+                        
+                        
+                            <variable_param_list>
+                                <param param_name="目标机NBU安装目录" variable_name="dest_path" param_value="/usr/openv/netbackup/bin/"/>
+                                <param param_name="数据库名" variable_name="db_name" param_value="tesudb"/>
+                                <param param_name="预设增量(Page)" variable_name="pre_increasement" param_value="2000"/>
+                                <param param_name="备机用户" variable_name="backup_profile" param_value="db2inst1"/>
+                                <param param_name="重定向配置文件路径" variable_name="config_path" param_value="/home/db2inst1"/>
+                                <param param_name="归档日志路径" variable_name="log_path" param_value="/home/db2inst1/arch"/>
+                            </variable_param_list>
                         </root>
                         """
 
@@ -3855,7 +3928,8 @@ def oracle_restore(request, process_id):
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id, "data_path": data_path,
                        "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
-                       "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open, "database": database, "all_hosts":all_hosts})
+                       "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open, "database": database,
+                       "all_hosts": all_hosts})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3938,7 +4012,6 @@ def cv_oracle_run(request):
         except:
             return JsonResponse({"res": "当前流程不存在。"})
 
-
         process = Process.objects.filter(id=processid).exclude(state="9").filter(type="cv_oracle")
         if (len(process) <= 0):
             result["res"] = '流程启动失败，该流程不存在。'
@@ -3952,7 +4025,7 @@ def cv_oracle_run(request):
                 })
             else:
                 db_name, system, config_path, database = "", "", "", ""
-                param_els = config.xpath("//param")
+                param_els = config.xpath("//fixed_param_list/param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
                     if variable_name == "db_name":
@@ -3966,52 +4039,52 @@ def cv_oracle_run(request):
                     if system_els:
                         database = system_els[0].attrib.get("database", "")
 
-                    # 写入本地文件后传上服务器
-                    db2_config_path = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "tmp" + os.sep + "db2.txt"
+                # 写入本地文件后传上服务器
+                db2_config_path = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "tmp" + os.sep + "db2.txt"
 
-                    try:
-                        with open(db2_config_path, "w") as f:
-                            f.write(new_config)
-                    except:
-                        return JsonResponse({"res": "配置文件写入本地失败。"})
+                try:
+                    with open(db2_config_path, "w") as f:
+                        f.write(new_config)
+                except:
+                    return JsonResponse({"res": "配置文件写入本地失败。"})
 
-                    backup_ip, backup_username, backup_passwd = "", "", ""
+                backup_ip, backup_username, backup_passwd = "", "", ""
+                try:
+                    c_back_host = HostsManage.objects.get(id=back_host)
+                    backup_ip = c_back_host.host_ip
+                    backup_username = c_back_host.username
+                    backup_passwd = c_back_host.password
+                except Exception as e:
+                    print(e)
+                # 上传配置文件
+                try:
+                    port = 22
+                    if system.upper() == "AIX":
+                        port = 20
+                    ssh = paramiko.Transport((backup_ip, port))
+                    ssh.connect(username=backup_username, password=backup_passwd)
+                    sftp = paramiko.SFTPClient.from_transport(ssh)
+                except paramiko.ssh_exception.SSHException as e:
+                    return JsonResponse({
+                        "res": "上传配置文件时，远程连接失败。"
+                    })
+                else:
                     try:
-                        c_back_host = HostsManage.objects.get(id=back_host)
-                        backup_ip = c_back_host.host_ip
-                        backup_username = c_back_host.username
-                        backup_passwd = c_back_host.password
-                    except Exception as e:
-                        print(e)
-                    # 上传配置文件
-                    try:
-                        port = 22
-                        if system.upper() == "AIX":
-                            port = 20
-                        ssh = paramiko.Transport((backup_ip, port))
-                        ssh.connect(username=backup_username, password=backup_passwd)
-                        sftp = paramiko.SFTPClient.from_transport(ssh)
-                    except paramiko.ssh_exception.SSHException as e:
+                        remote_path = ""
+
+                        if config_path.endswith("/"):
+                            remote_path = config_path + "{db_name}.txt".format(db_name=db_name)
+                        else:
+                            remote_path = config_path + "/{db_name}.txt".format(db_name=db_name)
+
+                        sftp.put(db2_config_path, remote_path)
+                    except FileNotFoundError as e:
                         return JsonResponse({
-                            "res": "上传配置文件时，远程连接失败。"
+                            "res": "文件不存在。"
                         })
-                    else:
-                        try:
-                            remote_path = ""
+                    if ssh:
+                        ssh.close()
 
-                            if config_path.endswith("/"):
-                                remote_path = config_path + "{db_name}1234.txt".format(db_name=db_name)
-                            else:
-                                remote_path = config_path + "/{db_name}1234.txt".format(db_name=db_name)
-
-                            sftp.put(db2_config_path, remote_path)
-                        except FileNotFoundError as e:
-                            return JsonResponse({
-                                "res": "文件不存在。"
-                            })
-                        if ssh:
-                            ssh.close()
-                            
             running_process = ProcessRun.objects.filter(process=process, state__in=["RUN", "ERROR"])
             if (len(running_process) > 0):
                 result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
@@ -4026,7 +4099,7 @@ def cv_oracle_run(request):
                     myprocessrun.creatuser = request.user.username
                     myprocessrun.run_reason = run_reason
                     myprocessrun.state = "RUN"
-                    
+
                     # 恢复变量/主机变量
                     # 存入主机变量与恢复变量
                     c_main_host, c_back_host = "", ""
@@ -4043,7 +4116,7 @@ def cv_oracle_run(request):
                     root = etree.Element("root")
                     # 主机/备机
                     host_param_list = etree.SubElement(root, "host_param_list")
-                    
+
                     host_dict = {
                         "main_host_name": c_main_host.host_name,
                         "main_host_username": c_main_host.username,
@@ -4054,26 +4127,26 @@ def cv_oracle_run(request):
                         "back_host_ip": c_back_host.host_ip,
                         "back_host_passwd": c_back_host.password,
                     }
-                    
+
                     for k, v in host_dict.items():
                         param = etree.SubElement(host_param_list, "param")
                         param.attrib["variable_name"] = k
                         param.attrib["param_value"] = v
-                    
+
                     # 恢复变量
                     restore_param_list = etree.SubElement(root, "restore_param_list")
-
 
                     select_strp_time = datetime.datetime.strptime(select_time, "%Y/%m/%d %H:%M:%S")
                     log_start_time = select_strp_time - datetime.timedelta(days=1)
                     log_end_time = select_strp_time + datetime.timedelta(days=1)
                     # 指定时间点/前2天 日志开始时间 日志结束时间
                     restore_param_dict = {
-                        "select_time": select_strp_time.strftime("%m/%d/%Y %H:%M:%S"),
+                        # "select_time": select_strp_time.strftime("%m/%d/%Y %H:%M:%S"),
+                        "select_time": select_strp_time.strftime("%Y-%m-%d-%H.%M.%S") + "000000",
                         "log_start_time": log_start_time.strftime("%m/%d/%Y %H:%M:%S"),
                         "log_end_time": log_end_time.strftime("%m/%d/%Y %H:%M:%S"),
                     }
-                    
+
                     for k, v in restore_param_dict.items():
                         param = etree.SubElement(restore_param_list, "param")
                         param.attrib["variable_name"] = k
@@ -4940,7 +5013,8 @@ def get_current_scriptinfo(request):
         else:
             selected_script_id = None
 
-        scriptrun_objs = ScriptRun.objects.filter(id=selected_script_id).select_related("steprun", "steprun__processrun")
+        scriptrun_objs = ScriptRun.objects.filter(id=selected_script_id).select_related("steprun",
+                                                                                        "steprun__processrun")
         script_id = scriptrun_objs[0].script_id if scriptrun_objs else None
 
         script_objs = Script.objects.filter(id=script_id).select_related("hosts_manage", "origin")
@@ -7368,7 +7442,8 @@ def dooraclerecovery(request):
                         pass
             if not instance:
                 return HttpResponse("恢复任务启动失败, 数据库实例不存在。")
-            oraRestoreOperator = {"restoreTime": restoreTime, "browseJobId": None, "data_path": data_path, "copy_priority": copy_priority}
+            oraRestoreOperator = {"restoreTime": restoreTime, "browseJobId": None, "data_path": data_path,
+                                  "copy_priority": copy_priority}
 
             cvToken = CV_RestApi_Token()
             cvToken.login(settings.CVApi_credit)
@@ -7510,7 +7585,7 @@ def process_schedule_save(request):
                     # cur_periodictask.args = [cur_process.id, request]
                     cur_periodictask.kwargs = json.dumps({
                         'cur_process': cur_process.id,
-                        'creatuser':  request.user.username
+                        'creatuser': request.user.username
                     })
                     cur_periodictask.save()
                     cur_periodictask_id = cur_periodictask.id
@@ -7551,7 +7626,7 @@ def process_schedule_save(request):
                             cur_periodictask.task = "faconstor.tasks.create_process_run"
                             cur_periodictask.kwargs = json.dumps({
                                 'cur_process': cur_process.id,
-                                'creatuser':  request.user.username
+                                'creatuser': request.user.username
                             })
                             cur_periodictask_status = cur_periodictask.enabled
                             cur_periodictask.enabled = cur_periodictask_status
@@ -7577,7 +7652,8 @@ def process_schedule_data(request):
     if request.user.is_authenticated():
         result = []
 
-        all_process_schedules = ProcessSchedule.objects.exclude(state="9").select_related("process", "dj_periodictask", "dj_periodictask__crontab")
+        all_process_schedules = ProcessSchedule.objects.exclude(state="9").select_related("process", "dj_periodictask",
+                                                                                          "dj_periodictask__crontab")
 
         for process_schedule in all_process_schedules:
             process_id = process_schedule.process.id
@@ -7698,6 +7774,7 @@ def load_backupset(request):
         process_id = request.GET.get("process_id", "")
         backupset_edt = request.GET.get("backupset_edt", "")
         back_id = request.GET.get("back_id", "")
+        main_host = request.GET.get("main_host", "")
         try:
             process_id = int(process_id)
         except ValueError as e:
@@ -7724,14 +7801,12 @@ def load_backupset(request):
                     "data": []
                 })
             else:
-                dest_path, origin_client, backup_ip, backup_username, backup_passwd, system, db_name = "","","","", "", "", ""
-                param_els = config.xpath("//param")
+                dest_path, origin_client, backup_ip, backup_username, backup_passwd, system, db_name = "", "", "", "", "", "", ""
+                param_els = config.xpath("//fixed_param_list/param")
                 for param_el in param_els:
                     variable_name = param_el.attrib.get("variable_name", "")
                     if variable_name == "dest_path":
                         dest_path = param_el.attrib.get("param_value", "")
-                    if variable_name == "origin_client":
-                        origin_client = param_el.attrib.get("param_value", "")
                     if variable_name == "db_name":
                         db_name = param_el.attrib.get("param_value", "")
 
@@ -7763,21 +7838,27 @@ def load_backupset(request):
                 # </root>
 
                 dts_list = []
-                if all([dest_path, origin_client, backupset_edt]):
+                if all([dest_path, backupset_edt]):
                     # 固定参数名称: dest_path/origin_client/backup_username/backup_passwd
 
                     # 修改时间格式 %m/%d/%Y %H:%M:%S
                     try:
                         # backupset_edt 前两天
-                        c_backupset_stt = (datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S") - datetime.timedelta(days=30)).strftime("%m/%d/%Y %H:%M:%S")
-                        c_backupset_edt = datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
+                        c_backupset_stt = (
+                                    datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S") - datetime.timedelta(
+                                days=30)).strftime("%m/%d/%Y %H:%M:%S")
+                        c_backupset_edt = datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S").strftime(
+                            "%m/%d/%Y %H:%M:%S")
                     except:
                         pass
                     else:
-                        load_backupset_cmd = "cd {dest_path}&&./bplist -C {origin_client} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
-                            dest_path=dest_path,origin_client=origin_client,backupset_stt=c_backupset_stt,backupset_edt=c_backupset_edt
+                        load_backupset_cmd = "cd {dest_path}&&./bplist -C {main_host} -t 18 -R -l -s {backupset_stt} -e {backupset_edt} /".format(
+                            dest_path=dest_path, main_host=main_host, backupset_stt=c_backupset_stt,
+                            backupset_edt=c_backupset_edt
                         )
-                        server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), backup_ip, backup_username, backup_passwd, system)
+                        print(load_backupset_cmd)
+                        server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), backup_ip, backup_username,
+                                                  backup_passwd, system)
                         result = server_obj.run("")
 
                         if result['exec_tag'] == 0:
@@ -7797,12 +7878,14 @@ def load_backupset(request):
                                     })
 
                             # >> 备份集的排序
-                            dts_list = sorted(dts_list,  key=lambda x:datetime.datetime.strptime(x["bks_time"], "%Y%m%d%H%M%S"))
+                            dts_list = sorted(dts_list,
+                                              key=lambda x: datetime.datetime.strptime(x["bks_time"], "%Y%m%d%H%M%S"))
                             for n, dts in enumerate(dts_list):
-                                dts["id"] = n+1
+                                dts["id"] = n + 1
 
                             dts_list = dts_list[-3:]
-                            dts_list[-1]["tag"] = "last"
+                            if dts_list:
+                                dts_list[-1]["tag"] = "last"
                         else:
                             dts_list = []
                 return JsonResponse({
@@ -7874,13 +7957,17 @@ def set_rec_config(request):
                 # 生成配置文件
                 if bcs_time:
                     set_rec_config_cmd = """su - {backup_profile} -c 'cd {config_path}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
-                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, bcs_time=bcs_time, config_path=config_path)
+                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, bcs_time=bcs_time,
+                               config_path=config_path)
                 else:
                     set_rec_config_cmd = """su - {backup_profile} -c 'cd {config_path}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 redirect generate script {db_name}.txt'
-                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path, config_path=config_path)
+                    """.format(backup_profile=backup_profile, db_name=db_name, dest_path=dest_path,
+                               config_path=config_path)
 
                 print("生成配置文件命令: %s" % set_rec_config_cmd)
-                server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd), backup_ip, backup_username, backup_passwd, system)
+                print(backup_ip, backup_username, backup_passwd, system)
+                server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd), backup_ip, backup_username, backup_passwd,
+                                          system)
                 set_rec_config_result = server_obj.run("")
 
                 if set_rec_config_result["exec_tag"] == 1:
@@ -7894,7 +7981,8 @@ def set_rec_config(request):
                 """.format(backup_profile=backup_profile, db_name=db_name, config_path=config_path)
                 print("读取配置文件命令：%s" % cat_config_cmd)
 
-                server_obj = ServerByPara(r"{0}".format(cat_config_cmd), backup_ip, backup_username, backup_passwd, system)
+                server_obj = ServerByPara(r"{0}".format(cat_config_cmd), backup_ip, backup_username, backup_passwd,
+                                          system)
                 cat_config_result = server_obj.run("")
 
                 if cat_config_result["exec_tag"] == 1:
@@ -7903,10 +7991,10 @@ def set_rec_config(request):
                         "data": "读取配置文件出错。%s" % cat_config_result["data"]
                     })
 
-
                 cat_config_data = cat_config_result["data"].replace("\r\n", "@@@")
                 # 1.拆分
-                f_parts = cat_config_data.split("""-- *****************************************************************************@@@-- *****************************************************************************""")
+                f_parts = cat_config_data.split(
+                    """-- *****************************************************************************@@@-- *****************************************************************************""")
 
                 com = re.compile(
                     """(Tablespace name[ ]+=[ ]+[a-z A-Z 0-9]+[\d\D]*?DEVICE[ ]+'[\d\D]*?'[ ]+\d+[\d\D]*?\);)"""
@@ -7941,7 +8029,8 @@ def set_rec_config(request):
                                     # 匹配表名
                                     space_com = re.compile(
                                         "[\d\D]*?Tablespace name[ ]+=[ ]+([a-z A-Z 0-9]+)")
-                                    space_name = space_com.findall(params_part)[0] if space_com.findall(params_part) else ""
+                                    space_name = space_com.findall(params_part)[0] if space_com.findall(
+                                        params_part) else ""
 
                                 if "DEVICE" in params_part:
                                     device_com = re.compile("DEVICE[ ]+'([\d\D]*?)'[ ]+(\d+)")

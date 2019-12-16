@@ -420,6 +420,8 @@ def runstep(steprun, if_repeat=False):
                 script.state = "RUN"
                 script.save()
 
+                script_name = script.script.name if script.script.name else ""
+
                 if script.script.interface_type == "脚本":
                     # HostsManage
                     cur_host_manage = script.script.hosts_manage
@@ -453,7 +455,6 @@ def runstep(steprun, if_repeat=False):
                             steprun.state = "ERROR"
                             steprun.save()
 
-                            script_name = script.script.name if script.script.name else ""
                             myprocesstask = ProcessTask()
                             myprocesstask.processrun = steprun.processrun
                             myprocesstask.starttime = datetime.datetime.now()
@@ -479,6 +480,14 @@ def runstep(steprun, if_repeat=False):
                         tmp_cmd = format_cmd(tmp_cmd, processrun)
 
                         if not tmp_cmd:
+                            script.runlog = "脚本" + script_name+ "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                            script.explain = "脚本" + script_name+ "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                            print("当前脚本执行失败,结束任务!")
+                            script.state = "ERROR"
+                            script.save()
+                            steprun.state = "ERROR"
+                            steprun.save()
+
                             myprocesstask = ProcessTask()
                             myprocesstask.processrun = steprun.processrun
                             myprocesstask.starttime = datetime.datetime.now(
@@ -488,7 +497,7 @@ def runstep(steprun, if_repeat=False):
                             myprocesstask.type = "ERROR"
                             myprocesstask.logtype = "SCRIPT"
                             myprocesstask.state = "0"
-                            myprocesstask.content = "脚本" + script_name + "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                            myprocesstask.content = "脚本" + script_name+ "参数传入失败，请处理检测是否遗漏或者拼写错误。"
                             myprocesstask.steprun_id = steprun.id
                             myprocesstask.save()
                             return 0
@@ -506,7 +515,6 @@ def runstep(steprun, if_repeat=False):
                             steprun.state = "ERROR"
                             steprun.save()
 
-                            script_name = script.script.name if script.script.name else ""
                             myprocesstask = ProcessTask()
                             myprocesstask.processrun = steprun.processrun
                             myprocesstask.starttime = datetime.datetime.now()
@@ -549,7 +557,6 @@ def runstep(steprun, if_repeat=False):
                             steprun.state = "ERROR"
                             steprun.save()
 
-                            script_name = script.script.name if script.script.name else ""
                             myprocesstask = ProcessTask()
                             myprocesstask.processrun = steprun.processrun
                             myprocesstask.starttime = datetime.datetime.now()
@@ -581,6 +588,14 @@ def runstep(steprun, if_repeat=False):
                             tmp_cmd = format_cmd(tmp_cmd, processrun)
 
                             if not tmp_cmd:
+                                script.runlog = "脚本" + script_name + "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                                script.explain = "脚本" + script_name + "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                                print("当前脚本执行失败,结束任务!")
+                                script.state = "ERROR"
+                                script.save()
+                                steprun.state = "ERROR"
+                                steprun.save()
+
                                 myprocesstask = ProcessTask()
                                 myprocesstask.processrun = steprun.processrun
                                 myprocesstask.starttime = datetime.datetime.now(
@@ -608,7 +623,6 @@ def runstep(steprun, if_repeat=False):
                                 steprun.state = "ERROR"
                                 steprun.save()
 
-                                script_name = script.script.name if script.script.name else ""
                                 myprocesstask = ProcessTask()
                                 myprocesstask.processrun = steprun.processrun
                                 myprocesstask.starttime = datetime.datetime.now(
@@ -643,7 +657,6 @@ def runstep(steprun, if_repeat=False):
                         steprun.state = "ERROR"
                         steprun.save()
 
-                        script_name = script.script.name if script.script.name else ""
                         myprocesstask = ProcessTask()
                         myprocesstask.processrun = steprun.processrun
                         myprocesstask.starttime = datetime.datetime.now()
@@ -736,7 +749,6 @@ def runstep(steprun, if_repeat=False):
                     steprun.state = "ERROR"
                     steprun.save()
 
-                    script_name = script.script.name if script.script.name else ""
                     myprocesstask = ProcessTask()
                     myprocesstask.processrun = steprun.processrun
                     myprocesstask.starttime = datetime.datetime.now()
@@ -759,7 +771,6 @@ def runstep(steprun, if_repeat=False):
                     steprun.state = "ERROR"
                     steprun.save()
 
-                    script_name = script.script.name if script.script.name else ""
                     myprocesstask = ProcessTask()
                     myprocesstask.processrun = steprun.processrun
                     myprocesstask.starttime = datetime.datetime.now()
@@ -777,7 +788,6 @@ def runstep(steprun, if_repeat=False):
                 script.state = "DONE"
                 script.save()
 
-                script_name = script.script.name if script.script.name else ""
 
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = steprun.processrun
@@ -1075,8 +1085,7 @@ def format_cmd(cmd, processrun):
     else:
         pr_config = etree.XML(pre_pr_config)
 
-    pr_params = pr_config.xpath("//param")
-    print('pr_params%s'%pr_params)
+    pr_fixed_params = pr_config.xpath("//param")
     # 预案变量
     p_config = ""
     pre_p_config = "<root></root>"
@@ -1085,47 +1094,53 @@ def format_cmd(cmd, processrun):
     else:
         p_config = etree.XML(pre_p_config)
 
-    p_params = p_config.xpath("//param")
+    p_variable_params = p_config.xpath("//variable_param_list/param")
+    p_fixed_params = p_config.xpath("//fixed_param_list/param")
     # 页面参数
-    #   预案变量 [[??]]
-    #   恢复变量/主机变量 {{??}}
-    process_vb_com = re.compile("\[\[(.*?)\]\]")
-    rcv_host_com = re.compile("\{\{(.*?)\}\}")
+    #   动态参数 [[??]]
+    #   固定参数 {{??}}
+    variable_param_com = re.compile("\[\[(.*?)\]\]")
+    fixed_param_com = re.compile("\{\{(.*?)\}\}")
 
-    process_vbs = process_vb_com.findall(cmd)
-    rcv_hosts = rcv_host_com.findall(cmd)
-    print(process_vbs, rcv_hosts)
+    variable_params = variable_param_com.findall(cmd)
+    fixed_params = fixed_param_com.findall(cmd)
     final_cmd = ''
 
-    for process_vb in process_vbs:
-        for p in p_params:
-            variable_name = p.attrib.get('variable_name', '')
-            param_value = p.attrib.get('param_value', '')
-            if process_vb == variable_name:
+    for vp in variable_params:
+        # process中动态参数
+        for p_v in p_variable_params:
+            variable_name = p_v.attrib.get('variable_name', '')
+            param_value = p_v.attrib.get('param_value', '')
+            if vp == variable_name:
                 if final_cmd:
-                    final_cmd = final_cmd.replace("[[%s]]"% process_vb, param_value)
+                    final_cmd = final_cmd.replace("[[%s]]"% vp, param_value)
                 else:
-                    final_cmd = cmd.replace("[[%s]]"% process_vb, param_value)
+                    final_cmd = cmd.replace("[[%s]]"% vp, param_value)
 
-    for rcv_host in rcv_hosts:
-        for pr in pr_params:
-            variable_name = pr.attrib.get('variable_name', '')
-            param_value = pr.attrib.get('param_value', '')
-            print("%s %s" % (rcv_host, variable_name))
-            if rcv_host == variable_name:
+    for fp in fixed_params:
+        # processrun中固定参数
+        for pr_f in pr_fixed_params:
+            variable_name = pr_f.attrib.get('variable_name', '')
+            param_value = pr_f.attrib.get('param_value', '')
+            if fp == variable_name:
                 if final_cmd:
-                    final_cmd = final_cmd.replace(
-                        "{{%s}}" % rcv_host, param_value)
+                    final_cmd = final_cmd.replace("{{%s}}" % fp, param_value)
                 else:
-                    print("----------%s"%cmd)
-                    final_cmd = cmd.replace("{{%s}}"% rcv_host, param_value)
-                    print("----------%s" % final_cmd)
-
+                    final_cmd = cmd.replace("{{%s}}"% fp, param_value)
+        # process表中固定参数
+        for p_f in p_fixed_params:
+            variable_name = p_f.attrib.get('variable_name', '')
+            param_value = p_f.attrib.get('param_value', '')
+            if fp == variable_name:
+                if final_cmd:
+                    final_cmd = final_cmd.replace("{{%s}}" % fp, param_value)
+                else:
+                    final_cmd = cmd.replace("{{%s}}"% fp, param_value)
     # 检测参数是否全部替换
-    aft_process_vbs = process_vb_com.findall(final_cmd)
-    aft_rcv_hosts = rcv_host_com.findall(final_cmd)
+    variable_param_rest = variable_param_com.findall(final_cmd)
+    fixed_param_rest = fixed_param_com.findall(final_cmd)
 
-    if any([aft_process_vbs, aft_rcv_hosts]):
+    if any([variable_param_rest, fixed_param_rest]):
         return None
 
     return final_cmd if final_cmd else cmd

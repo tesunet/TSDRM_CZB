@@ -98,6 +98,7 @@
     customProcessDataTable();
 
     $("#confirm").click(function () {
+        $('#waiting_run').modal({ backdrop: 'static', keyboard: false });
         var process_id = $("#process_id").val();
 
         var dialog_inputs = $('#config_edit_table thead').find('input');
@@ -142,7 +143,7 @@
                     var new_line_text = '';
                     // 当前tr的display为node的替换成空
                     if (cur_config_edit_tr.css('display') != "none"){
-                        new_line_text = line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, aft_capacity);
+                        new_line_text = line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, aft_capacity).replace("DEVICE", "FILE");
                     } 
 
                     // 替换段落内行数据
@@ -179,12 +180,14 @@
                 back_host: $('#back_host').val(),
             },
             success: function (data) {
+                $('#waiting_run').modal('hide');
                 if (data["res"] == "新增成功。") {
                     window.location.href = data["data"];
                 } else
                     alert(data["res"]);
             },
             error: function (e) {
+                $('#waiting_run').modal('hide');
                 alert("流程启动失败，请于管理员联系。");
             }
         });
@@ -540,11 +543,12 @@
         $('#back_host').val("");
 
         var database = $('#database').val();
-
         if (database == "db2"){
             $('#load_backupset').parent().show();
+            $('#run_div').hide();
         } else {
             $('#load_backupset').parent().hide();
+            $('#run_div').show();
         }
     });
 
@@ -570,7 +574,7 @@
         $("#bst_static").modal("show");
         if ($('#bst_status').val()=="complete"){
             var table = $('#bks_dt').dataTable();
-            table.api().ajax.url("../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&back_id=" + $('#back_host').val()).load();
+            table.api().ajax.url("../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&back_id=" + $('#back_host').val() + "&main_host=" + $('#main_host option:selected').text().trim()).load();
         } else {
             $('#bst_status').val('');
             $('#bks_dt').dataTable({
@@ -579,7 +583,7 @@
                 "bSort": false,
                 "bProcessing": true,
                 // 备机id
-                "ajax": "../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&back_id=" + $('#back_host').val(),
+                "ajax": "../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&back_id=" + $('#back_host').val() + "&main_host=" + $('#main_host  option:selected').text().trim(),
                 "columns": [
                     { "data": "id" },
                     { "data": "bks_time" },
@@ -709,6 +713,8 @@
                         $('#config_edit_table tbody').find('tr[id="' + pre_space_name_list[i] + '"]:eq(0)').find('td:eq(0)').html('&nbsp&nbsp' + pre_space_name_list[i] + '  <span><a href="javascript:;" title="合并" name="merge"><i class="fa fa-minus-square-o"></i></a></span>');
                     }
                 }
+                // 加载成功后显示启动按钮
+                $('#run_div').show();
             },
             error: function () {
                 alert("页面出现错误，请于管理员联系。");
@@ -797,10 +803,10 @@
     });
 
     // 切换备机 加载备份集
-    var database = $('#database').val();
-    $('#back_host').change(function () {
-        if (database == "db2") {
-            $('#load_backupset').trigger('click');
-        }
-    });
+    // var database = $('#database').val();
+    // $('#back_host').change(function () {
+    //     if (database == "db2") {
+    //         $('#load_backupset').trigger('click');
+    //     }
+    // });
 });
