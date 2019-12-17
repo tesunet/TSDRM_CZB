@@ -3922,6 +3922,13 @@ def oracle_restore(request, process_id):
                 if database_els:
                     database = database_els[0].attrib.get("database", "")
 
+                param_els = config.xpath("//fixed_param_list/param")
+                for param_el in param_els:
+                    variable_name = param_el.attrib.get("variable_name", "")
+                    if variable_name == "db_name":
+                        db_name = param_el.attrib.get("param_value", "")
+                        break
+
         all_hosts = HostsManage.objects.exclude(state='9')
 
         return render(request, 'oracle_restore.html',
@@ -3929,7 +3936,7 @@ def oracle_restore(request, process_id):
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id, "data_path": data_path,
                        "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
                        "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open, "database": database,
-                       "all_hosts": all_hosts})
+                       "all_hosts": all_hosts, "db_name": db_name})
     else:
         return HttpResponseRedirect("/login")
 

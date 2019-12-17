@@ -534,6 +534,7 @@
         $("#target").val($("#target_selected").val());
         $("#run_reason").val("");
         $("#recovery_time").val("");
+        $('#db_name').val($('#pre_db_name').val());
 
         // 写入当前时间
         var myDate = new Date();
@@ -554,7 +555,6 @@
             $('#run_div').hide();
 
             $('#db2_conf').show();
-            $('#db_name').val("");
             $('#storage_policy').val("");
             $('#client_name').val("");
             $('#schedule_policy').val("");

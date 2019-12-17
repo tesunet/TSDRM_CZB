@@ -108,9 +108,8 @@
     <input type="text" hidden id="process_id" value="{{ process_id }}">
     <input type="text" hidden id="plan_process_run_id" value="{{ plan_process_run_id }}">
     <input type="text" hidden id="database" value="{{ database }}">
+    <input type="text" hidden id="pre_db_name" value="{{ db_name }}">
     <input type="text" hidden id="bst_status">
-
-
 
 
 
@@ -172,7 +171,7 @@
                                 <div class="form-group">
                                     <label class="col-md-2 control-label"><span style="color:red; "></span>数据库名</label>
                                     <div class="col-md-4">
-                                        <input id="db_name" type="text" name="db_name" class="form-control">
+                                        <input id="db_name" type="text" name="db_name" class="form-control" readonly>
                                         <div class="form-control-focus"></div>
                                     </div>
                                     <label class="col-md-2 control-label"><span style="color:red; "></span>存储策略</label>
