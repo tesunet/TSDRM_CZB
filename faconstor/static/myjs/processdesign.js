@@ -93,21 +93,6 @@ $(document).ready(function () {
         $("#sort").val(data.process_sort);
         $("#process_color").val(data.process_color);
 
-        $("#system").val(data.system);
-        $("#database").val(data.database);
-
-        if (data.database == "db2") {
-            $('#db2_fixed_params').show();
-            $("#dest_path").val(data.dest_path);
-            $("#db_name").val(data.db_name);
-            $("#pre_increasement").val(data.pre_increasement);
-            $("#backup_profile").val(data.backup_profile);
-            $("#config_path").val(data.config_path);
-            $("#log_path").val(data.log_path);
-        } else {
-            $('#db2_fixed_params').hide();
-        }
-
         // 动态参数
         $('#param_se').empty();
         var variable_param_list = JSON.parse(data.variable_param_list);
@@ -128,45 +113,13 @@ $(document).ready(function () {
         $("#sort").val("");
         $("#process_color").val("");
 
-        $("#system").val("");
-        $("#database").val("");
-
         $("#param_se").empty();
-
-        $('#db2_fixed_params').hide();
-
-
-        $('#dest_path').val("");
-        $('#db_name').val("");
-        $('#pre_increasement').val("");
-        $('#backup_profile').val("");
-        $('#config_path').val("");
-        $('#log_path').val("");
     });
-
-    $("#database").change(function () {
-        var database = $(this).val();
-        if (database == 'db2') {
-            $('#db2_fixed_params').show();
-        } else {
-            $('#db2_fixed_params').hide();
-        }
-    });
-
 
     $('#save').click(function () {
         var table = $('#sample_1').DataTable();
 
         var params_list = [];
-
-
-        // 固定参数
-        var dest_path = $('#dest_path').val();
-        var db_name = $('#db_name').val();
-        var pre_increasement = $('#pre_increasement').val();
-        var backup_profile = $('#backup_profile').val();
-        var config_path = $('#config_path').val();
-        var log_path = $('#log_path').val();
 
 
         // 构造参数Map>> Array (动态参数)
@@ -197,18 +150,8 @@ $(document).ready(function () {
                 sort: $("#sort").val(),
                 color: $("#process_color").val(),
 
-                system: $("#system").val(),
-                database: $("#database").val(),
                 // 重定向路径/目标机安装目录/源机器名/备机用户名/备机密码
                 config: JSON.stringify(params_list),
-
-                // 固定参数
-                dest_path: dest_path,
-                db_name: db_name,
-                pre_increasement: pre_increasement,
-                backup_profile: backup_profile,
-                config_path: config_path,
-                log_path: log_path,
             },
             success: function (data) {
                 var myres = data["res"];
@@ -278,16 +221,6 @@ $(document).ready(function () {
                         var txt_param = params_t_list[0];
                         var v_param = params_t_list[1];
 
-                        // $("#params").empty();
-                        // $("#params").append(
-                        //     '<div class="form-group">' +
-                        //     '<label class="col-md-2 control-label"><span style="color:red; "></span>' + txt_param + '</label>' +
-                        //     '<div class="col-md-10">' +
-                        //     '<input id="' + alpha_param + '" type="text" name="' + alpha_param + '" value="' + v_param + '" class="form-control" placeholder="">' +
-                        //     '<div class="form-control-focus"></div>' +
-                        //     '</div>' +
-                        //     '</div>'
-                        // );
                         $("#params").empty();
                         $("#params").append(
                             '<div class="form-group">' +
@@ -344,11 +277,6 @@ $(document).ready(function () {
             $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
         }
 
-        // var variable_name = $("#params").find("input").prop("id");
-        // var param_name = $("#params").find("label").text();
-        // var param_value = $("#params").find("input").val();
-
-        // $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
         $("#static01").modal("hide");
     });
 });

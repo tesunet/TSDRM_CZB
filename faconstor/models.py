@@ -156,6 +156,14 @@ class HostsManage(models.Model):
     username = models.CharField("用户名", blank=True, null=True, max_length=50)
     password = models.CharField("密码", blank=True, null=True, max_length=50)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
+    host_type_choice = (
+        (1, "DB2源机"),
+        (2, "DB2备机"),
+        (3, "Oracle源机"),
+        (4, "Oracle备机")
+    )
+    host_type = models.IntegerField("主机类型", choices=host_type_choice, null=True, blank=True)
+    config = models.TextField("主机相关配置", blank=True, null=True)
 
 
 class Script(models.Model):

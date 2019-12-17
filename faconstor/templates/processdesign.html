@@ -100,28 +100,6 @@
 
                                 </div>
                             </div>
-
-
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span style="color:red; "></span>系统</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="system" name="system">
-                                        <option value="Linux">Linux</option>
-                                        <option value="AIX">AIX</option>
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span style="color:red; "></span>数据库</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="database" name="database">
-                                        <option value="Oracle">Oracle</option>
-                                        <option value="db2">db2</option>
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>RTO</label>
@@ -152,71 +130,6 @@
 
                                 </div>
                             </div>
-                            <div id="db2_fixed_params">
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span><b>预设参数</b></label>
-                                    <div class="col-md-10">
-                                        <hr>
-                                        <div class="form-control-focus"></div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>目标机NBU安装目录</label>
-                                    <div class="col-md-10">
-                                        <input id="dest_path" type="text" name="dest_path" class="form-control"
-                                               placeholder="">
-                                        <div class="form-control-focus"></div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>数据库名</label>
-                                    <div class="col-md-10">
-                                        <input id="db_name" type="text" name="db_name" class="form-control"
-                                               placeholder="">
-                                        <div class="form-control-focus"></div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>预设增量(Page)</label>
-                                    <div class="col-md-10">
-                                        <input id="pre_increasement" type="number" name="pre_increasement" class="form-control"
-                                               placeholder="">
-                                        <div class="form-control-focus"></div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>备机用户</label>
-                                    <div class="col-md-10">
-                                        <input id="backup_profile" type="text" name="backup_profile" class="form-control"
-                                               placeholder="">
-                                        <div class="form-control-focus"></div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>重定向配置文件路径</label>
-                                    <div class="col-md-10">
-                                        <input id="config_path" type="text" name="config_path" class="form-control"
-                                               placeholder="">
-                                        <div class="form-control-focus"></div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>归档日志路径</label>
-                                    <div class="col-md-10">
-                                        <input id="log_path" type="text" name="log_path" class="form-control"
-                                               placeholder="">
-                                        <div class="form-control-focus"></div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span><b>动态参数</b></label>
@@ -302,19 +215,14 @@
             data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
         });
     </script>
-    <link href="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.css" rel="stylesheet"
-          type="text/css"/>
+    <link href="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.css" rel="stylesheet" type="text/css"/>
     <link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css"/>
-    <link href="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.css" rel="stylesheet"
-          type="text/css"/>
-    <script src="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.js"
-            type="text/javascript"></script>
+    <link href="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.css" rel="stylesheet" type="text/css"/>
+    <script src="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.js" type="text/javascript"></script>
     <script src="/static/assets/global/plugins/datatables/datatables.min.js" type="text/javascript"></script>
-    <script src="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.js"
-            type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.js" type="text/javascript"></script>
 
     // context-munu
-    <script src="/static/assets/global/plugins/bootstrap-contextmenu/bootstrap-contextmenu.js"
-            type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/bootstrap-contextmenu/bootstrap-contextmenu.js" type="text/javascript"></script>
 {% endblock %}
 

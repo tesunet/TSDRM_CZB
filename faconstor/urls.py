@@ -86,7 +86,7 @@ urlpatterns = [
     # Oracle恢复
     url(r'^oracle_restore/(?P<process_id>\d+)$', oracle_restore),
     url(r'^oracle_restore_data/$', oracle_restore_data),
-    url(r'^cv_oracle_run/$', cv_oracle_run),
+    url(r'^process_startup/$', process_startup),
     url(r'^cv_oracle/(\d+)/$', cv_oracle, {'funid': '49'}),
     url(r'^save_invitation/$', save_invitation),
     url(r'^cv_oracle_run_invited/$', cv_oracle_run_invited),

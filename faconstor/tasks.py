@@ -1077,7 +1077,7 @@ def create_process_run(*args, **kwargs):
 
 
 def format_cmd(cmd, processrun):
-    # 恢复变量/主机变量
+    # processrun.config
     pr_config = ""
     pre_pr_config = "<root></root>"
     if processrun.config:
@@ -1086,7 +1086,8 @@ def format_cmd(cmd, processrun):
         pr_config = etree.XML(pre_pr_config)
 
     pr_fixed_params = pr_config.xpath("//param")
-    # 预案变量
+
+    # process.config
     p_config = ""
     pre_p_config = "<root></root>"
     if processrun.process.config:
@@ -1094,11 +1095,9 @@ def format_cmd(cmd, processrun):
     else:
         p_config = etree.XML(pre_p_config)
 
-    p_variable_params = p_config.xpath("//variable_param_list/param")
-    p_fixed_params = p_config.xpath("//fixed_param_list/param")
-    # 页面参数
-    #   动态参数 [[??]]
-    #   固定参数 {{??}}
+    p_variable_params = p_config.xpath("//param")
+
+    # 固定
     variable_param_com = re.compile("\[\[(.*?)\]\]")
     fixed_param_com = re.compile("\{\{(.*?)\}\}")
 
@@ -1127,15 +1126,6 @@ def format_cmd(cmd, processrun):
                     final_cmd = final_cmd.replace("{{%s}}" % fp, param_value)
                 else:
                     final_cmd = cmd.replace("{{%s}}"% fp, param_value)
-        # process表中固定参数
-        for p_f in p_fixed_params:
-            variable_name = p_f.attrib.get('variable_name', '')
-            param_value = p_f.attrib.get('param_value', '')
-            if fp == variable_name:
-                if final_cmd:
-                    final_cmd = final_cmd.replace("{{%s}}" % fp, param_value)
-                else:
-                    final_cmd = cmd.replace("{{%s}}"% fp, param_value)
     # 检测参数是否全部替换
     variable_param_rest = variable_param_com.findall(final_cmd)
     fixed_param_rest = fixed_param_com.findall(final_cmd)
@@ -1144,40 +1134,3 @@ def format_cmd(cmd, processrun):
         return None
 
     return final_cmd if final_cmd else cmd
-
-
-# @shared_task
-# def crond_stop_process_run():
-#     """
-#     时隔一个小时检测流程，过滤错误流程至现在时间超过24小时，则终止该流程
-#     :return:
-#     """
-#     all_process = Process.objects.exclude(state="9").filter(type="cv_oracle")
-#     for process in all_process:
-#         process_runs = process.processrun_set.filter(state="ERROR")
-#         if process_runs.exists():
-#             process_run = process_runs.last()
-#             error_time = process_run.starttime
-#             time_now = datetime.datetime.now()
-#
-#             if error_time:
-#                 try:
-#                     delta_time = (time_now - error_time).total_seconds()
-#                 except:
-#                     pass
-#                 else:
-#                     # if delta_time >= 10:
-#                     if delta_time >= 60 * 60 * 24:
-#                         process_run.state = "STOP"
-#                         process_run.save()
-#
-#                         myprocesstask = ProcessTask()
-#                         myprocesstask.processrun = process_run
-#                         myprocesstask.starttime = datetime.datetime.now()
-#                         myprocesstask.senduser = process_run.creatuser
-#                         myprocesstask.type = "INFO"
-#                         myprocesstask.logtype = "END"
-#                         myprocesstask.state = "1"
-#                         myprocesstask.content = "流程" + process_run.process.name + "执行失败超过24小时，自动终止。"
-#                         myprocesstask.save()
-#

@@ -107,10 +107,8 @@
 
     <input type="text" hidden id="process_id" value="{{ process_id }}">
     <input type="text" hidden id="plan_process_run_id" value="{{ plan_process_run_id }}">
-    <input type="text" hidden id="database" value="{{ database }}">
-    <input type="text" hidden id="pre_db_name" value="{{ db_name }}">
     <input type="text" hidden id="bst_status">
-
+    <input hidden id="param_list" type="text" name="param_list" value="{{ param_list_json }}">
 
 
     <div id="static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
@@ -146,11 +144,13 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>主机</label>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>源机</label>
                                 <div class="col-md-4">
-                                    <select name="main_host" id="main_host" class='form-control'>
-                                        {% for host in all_hosts %}
-                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
+                                    <select name="pri_host" id="pri_host" class='form-control'>
+                                        {% for host in param_list %}
+                                            {% if host.host_type_tag == 1 %}
+                                            <option value="{{ host.host_id }}">{{ host.host_name }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>
@@ -158,53 +158,66 @@
                                 </div>
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>备机</label>
                                 <div class="col-md-4">
-                                    <select name="back_host" id="back_host" class='form-control'>
-                                        {% for host in all_hosts %}
-                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
+                                    <select name="std_host" id="std_host" class='form-control'>
+                                        {% for host in param_list %}
+                                            {% if host.host_type_tag == 0 %}
+                                            <option value="{{ host.host_id }}">{{ host.host_name }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>
 
                                 </div>
                             </div>
-                            <div id="db2_conf" hidden>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span style="color:red; "></span>数据库名</label>
-                                    <div class="col-md-4">
-                                        <input id="db_name" type="text" name="db_name" class="form-control" readonly>
-                                        <div class="form-control-focus"></div>
-                                    </div>
-                                    <label class="col-md-2 control-label"><span style="color:red; "></span>存储策略</label>
-                                    <div class="col-md-4">
-                                        <input id="storage_policy" type="text" name="storage_policy"
-                                               class="form-control">
-                                        <div class="form-control-focus"></div>
-
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="col-md-2 control-label"></label>
+                                <div class="col-md-4">
+                                    <input type="text" id="pri_host_type_display" hidden>
+                                    <div class="row col-md-12" style="margin-left: 15px;padding-left: 0;" id="pri">
+{#                                        <div class="form-group">#}
+{#                                            <label class="col-md-3 control-label" style="padding-left: 0;">主机参数1</label>#}
+{#                                            <div class="col-md-9">#}
+{#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
+{#                                                       placeholder=""#}
+{#                                                       readonly>#}
+{#                                                <div class="form-control-focus"></div>#}
+{##}
+{#                                            </div>#}
+{#                                        </div>#}
+{#                                        <div class="form-group">#}
+{#                                            <label class="col-md-3 control-label" style="padding-left: 0;">主机参数2</label>#}
+{#                                            <div class="col-md-9">#}
+{#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
+{#                                                       placeholder=""#}
+{#                                                       readonly>#}
+{#                                                <div class="form-control-focus"></div>#}
+{##}
+{#                                            </div>#}
+{#                                        </div>#}
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span style="color:red; "></span>客户端</label>
-                                    <div class="col-md-4">
-                                        <input id="client_name" type="text" name="client_name" class="form-control">
-                                        <div class="form-control-focus"></div>
-
-                                    </div>
-                                    <label class="col-md-2 control-label"><span style="color:red; "></span>计划策略</label>
-                                    <div class="col-md-4">
-                                        <input id="schedule_policy" type="text" name="schedule_policy" class="form-control">
-                                        <div class="form-control-focus"></div>
-
+                                <label class="col-md-2 control-label"></label>
+                                <div class="col-md-4">
+                                    <input type="text" id="std_host_type_display" hidden>
+                                    <div class="row col-md-12" style="margin-left: 15px;padding-left: 0;" id="std">
+{#                                        <div class="form-group">#}
+{#                                            <label class="col-md-3 control-label" style="padding-left: 0;">备机参数1</label>#}
+{#                                            <div class="col-md-9">#}
+{#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
+{#                                                       placeholder=""#}
+{#                                                       readonly>#}
+{#                                                <div class="form-control-focus"></div>#}
+{##}
+{#                                            </div>#}
+{#                                        </div>#}
                                     </div>
                                 </div>
                             </div>
+
                             <div class="form-group" id='load_backupset_div'>
-                                <!-- <label class="col-md-2 control-label"><span style="color:red; "></span>开始时间</label>
-                                <div class="col-md-3">
-                                    <input id="backupset_stt" type="text" name="backupset_stt" class="form-control" placeholder="">
-                                    <div class="form-control-focus"></div>
-                                </div> -->
+
                                 <label class="col-md-2 control-label"><span style="color:red; "></span>选择时间</label>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <input id="backupset_edt" type="text" name="backupset_edt" class="form-control"
                                            placeholder="">
                                     <div class="form-control-focus"></div>

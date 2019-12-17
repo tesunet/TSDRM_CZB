@@ -19,16 +19,16 @@
                 })
             },
             "columns": [
-                { "data": "processrun_id" },
-                { "data": "process_name" },
-                { "data": "createuser" },
-                { "data": "state" },
-                { "data": "run_reason" },
-                { "data": "starttime" },
-                { "data": "endtime" },
-                { "data": "process_id" },
-                { "data": "process_url" },
-                { "data": null },
+                {"data": "processrun_id"},
+                {"data": "process_name"},
+                {"data": "createuser"},
+                {"data": "state"},
+                {"data": "run_reason"},
+                {"data": "starttime"},
+                {"data": "endtime"},
+                {"data": "process_id"},
+                {"data": "process_url"},
+                {"data": null},
             ],
             "columnDefs": [{
                 "targets": 1,
@@ -76,9 +76,9 @@
                     type: "POST",
                     url: "../../delete_current_process_run/",
                     data:
-                    {
-                        processrun_id: data.processrun_id
-                    },
+                        {
+                            processrun_id: data.processrun_id
+                        },
                     success: function (data) {
                         if (data == 1) {
                             table.ajax.reload();
@@ -98,7 +98,7 @@
     customProcessDataTable();
 
     $("#confirm").click(function () {
-        $('#waiting_run').modal({ backdrop: 'static', keyboard: false });
+        $('#waiting_run').modal({backdrop: 'static', keyboard: false});
         var process_id = $("#process_id").val();
 
         var dialog_inputs = $('#config_edit_table thead').find('input');
@@ -142,9 +142,9 @@
 
                     var new_line_text = '';
                     // 当前tr的display为node的替换成空
-                    if (cur_config_edit_tr.css('display') != "none"){
+                    if (cur_config_edit_tr.css('display') != "none") {
                         new_line_text = line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, aft_capacity).replace("DEVICE", "FILE");
-                    } 
+                    }
 
                     // 替换段落内行数据
                     if (new_tmp_dialog) {
@@ -164,7 +164,7 @@
         $.ajax({
             type: "POST",
             dataType: 'json',
-            url: "../cv_oracle_run/",
+            url: "../process_startup/",
             data: {
                 processid: process_id,
                 run_person: $("#run_person").val(),
@@ -176,14 +176,21 @@
                 select_time: $('#backupset_edt').val(),
 
                 // 主机变量
-                main_host: $('#main_host').val(),
-                back_host: $('#back_host').val(),
+                pri_host_id: $('#pri_host').val(),
+                std_host_id: $('#std_host').val(),
 
-                // db2.conf文件所需参数
+                // 源机参数：db2.conf文件所需参数
                 db_name: $('#db_name').val(),
                 storage_policy: $('#storage_policy').val(),
                 client_name: $('#client_name').val(),
                 schedule_policy: $('#schedule_policy').val(),
+
+                // 备机参数
+                nbu_install_path: $('#nbu_install_path').val(),
+                pre_increasement: $('#pre_increasement').val(),
+                std_profile: $('#std_profile').val(),
+                redirect_file_path: $('#redirect_file_path').val(),
+                arch_log_path: $('#arch_log_path').val(),
             },
             success: function (data) {
                 $('#waiting_run').modal('hide');
@@ -208,20 +215,20 @@
             dataType: 'json',
             url: "../cv_oracle_run_invited/",
             data:
-            {
-                processid: process_id,
-                plan_process_run_id: plan_process_run_id,
-                run_person: $("#runperson_invited").val(),
-                run_time: $("#runtime_invited").val(),
-                run_reason: $("#runreason_invited").val(),
+                {
+                    processid: process_id,
+                    plan_process_run_id: plan_process_run_id,
+                    run_person: $("#runperson_invited").val(),
+                    run_time: $("#runtime_invited").val(),
+                    run_reason: $("#runreason_invited").val(),
 
-                target: $("#target_invited").val(),
-                recovery_time: $("#recovery_time_invited").val(),
-                browseJobId: $("#browseJobIdInvited").val(),
-                data_path: $("#data_path_invited").val(),
+                    target: $("#target_invited").val(),
+                    recovery_time: $("#recovery_time_invited").val(),
+                    browseJobId: $("#browseJobIdInvited").val(),
+                    data_path: $("#data_path_invited").val(),
 
-                origin: $("#origin_invited").val()
-            },
+                    origin: $("#origin_invited").val()
+                },
             success: function (data) {
                 if (data["res"] == "新增成功。") {
                     window.location.href = data["data"];
@@ -235,7 +242,7 @@
     });
 
     $("#run").click(function () {
-        $("#static").modal({ backdrop: "static" });
+        $("#static").modal({backdrop: "static"});
         $('#recovery_time').datetimepicker({
             format: 'yyyy-mm-dd hh:ii:ss',
             pickerPosition: 'top-right'
@@ -250,7 +257,7 @@
     });
 
     $("#run_invited").click(function () {
-        $("#static02").modal({ backdrop: "static" });
+        $("#static02").modal({backdrop: "static"});
         $('#recovery_time_invited').datetimepicker({
             format: 'yyyy-mm-dd hh:ii:ss',
             pickerPosition: 'top-right'
@@ -264,7 +271,7 @@
 
     $("#plan").click(function () {
         var plan_process_run_id = $("#plan_process_run_id").val();
-        $("#static01").modal({ backdrop: "static" });
+        $("#static01").modal({backdrop: "static"});
         if (plan_process_run_id != "" && plan_process_run_id != null) {
             $("#save_div").hide();
             $("#download_div").show();
@@ -274,9 +281,9 @@
                 dataType: 'json',
                 url: "../fill_with_invitation/",
                 data:
-                {
-                    plan_process_run_id: plan_process_run_id,
-                },
+                    {
+                        plan_process_run_id: plan_process_run_id,
+                    },
                 success: function (data) {
                     $("#start_date").val(data.start_time);
                     $("#end_date").val(data.end_time);
@@ -324,13 +331,13 @@
             dataType: 'json',
             url: "../save_invitation/",
             data:
-            {
-                process_id: process_id,
-                plan_process_run_id: plan_process_run_id,
-                start_time: $("#start_date").val(),
-                end_time: $("#end_date").val(),
-                purpose: $("#purpose").val(),
-            },
+                {
+                    process_id: process_id,
+                    plan_process_run_id: plan_process_run_id,
+                    start_time: $("#start_date").val(),
+                    end_time: $("#end_date").val(),
+                    purpose: $("#purpose").val(),
+                },
             success: function (data) {
                 if (data["res"] == "流程计划成功，待开启流程。") {
                     $("#save_div").hide();
@@ -355,9 +362,9 @@
                 dataType: 'json',
                 url: "../reject_invited/",
                 data:
-                {
-                    plan_process_run_id: plan_process_run_id,
-                },
+                    {
+                        plan_process_run_id: plan_process_run_id,
+                    },
                 success: function (data) {
                     alert(data["res"]);
                     if (data['res'] === "取消演练计划成功！") {
@@ -372,7 +379,7 @@
 
     // 修改计划流程
     $("#modify_invited").click(function () {
-        $("#static03").modal({ backdrop: "static" });
+        $("#static03").modal({backdrop: "static"});
         $('#start_date_modify').datetimepicker({
             autoclose: true,
             format: 'yyyy-mm-dd hh:ii',
@@ -391,12 +398,12 @@
             dataType: 'json',
             url: "../save_modify_invitation/",
             data:
-            {
-                plan_process_run_id: plan_process_run_id,
-                start_date_modify: $("#start_date_modify").val(),
-                end_date_modify: $("#end_date_modify").val(),
-                purpose_modify: $("#purpose_modify").val(),
-            },
+                {
+                    plan_process_run_id: plan_process_run_id,
+                    start_date_modify: $("#start_date_modify").val(),
+                    end_date_modify: $("#end_date_modify").val(),
+                    purpose_modify: $("#purpose_modify").val(),
+                },
             success: function (data) {
                 if (data["res"] == "修改流程计划成功，待开启流程。") {
                     $("#save_div").hide();
@@ -414,7 +421,7 @@
 
     $("#recovery_time_redio_group").click(function () {
         if ($("input[name='recovery_time_redio']:checked").val() == 2) {
-            $("#static04").modal({ backdrop: "static" });
+            $("#static04").modal({backdrop: "static"});
             var origin = $("#origin").val();
             var datatable = $("#backup_point").dataTable();
             datatable.fnClearTable(); //清空数据
@@ -425,12 +432,12 @@
                 "bSort": false,
                 "ajax": "../../oraclerecoverydata?clientName=" + origin,
                 "columns": [
-                    { "data": "jobId" },
-                    { "data": "jobType" },
-                    { "data": "Level" },
-                    { "data": "StartTime" },
-                    { "data": "LastTime" },
-                    { "data": null },
+                    {"data": "jobId"},
+                    {"data": "jobType"},
+                    {"data": "Level"},
+                    {"data": "StartTime"},
+                    {"data": "LastTime"},
+                    {"data": null},
                 ],
                 "columnDefs": [{
                     "targets": -1,
@@ -473,7 +480,7 @@
 
     $("#recovery_time_redio_group_invited").click(function () {
         if ($("input[name='recovery_time_redio_invited']:checked").val() == 2) {
-            $("#static04").modal({ backdrop: "static" });
+            $("#static04").modal({backdrop: "static"});
             var origin = $("#origin_invited").val();
             var datatable = $("#backup_point").dataTable();
             datatable.fnClearTable(); //清空数据
@@ -484,12 +491,12 @@
                 "bSort": false,
                 "ajax": "../../oraclerecoverydata?clientName=" + origin,
                 "columns": [
-                    { "data": "jobId" },
-                    { "data": "jobType" },
-                    { "data": "Level" },
-                    { "data": "StartTime" },
-                    { "data": "LastTime" },
-                    { "data": null },
+                    {"data": "jobId"},
+                    {"data": "jobType"},
+                    {"data": "Level"},
+                    {"data": "StartTime"},
+                    {"data": "LastTime"},
+                    {"data": null},
                 ],
                 "columnDefs": [{
                     "targets": -1,
@@ -538,32 +545,22 @@
 
         // 写入当前时间
         var myDate = new Date();
-        $("#run_time").val(myDate.toLocaleString('zh', { hour12: false }));
+        $("#run_time").val(myDate.toLocaleString('zh', {hour12: false}));
         $("input[name='recovery_time_redio'][value='1']").prop("checked", true);
         $("input[name='recovery_time_redio'][value='2']").prop("checked", false);
 
         // 获取备份集: backupset_stt backupset_edt
-        $("#backupset_edt").val(myDate.toLocaleString('zh', { hour12: false }));
+        $("#backupset_edt").val(myDate.toLocaleString('zh', {hour12: false}));
 
         // 清空主机、备机
-        $('#main_host').val("");
-        $('#back_host').val("");
+        $('#pri_host').val("");
+        $('#std_host').val("");
 
-        var database = $('#database').val();
-        if (database == "db2"){
-            $('#load_backupset').parent().show();
-            $('#run_div').hide();
+        $('#pri').empty();
+        $('#std').empty();
 
-            $('#db2_conf').show();
-            $('#storage_policy').val("");
-            $('#client_name').val("");
-            $('#schedule_policy').val("");
-        } else {
-            $('#load_backupset').parent().hide();
-            $('#run_div').show();
-
-            $('#db2_conf').hide();
-        }
+        $('#pri_host_type_display').val("");
+        $('#std_host_type_display').val("");
     });
 
     $('#backupset_edt').datetimepicker({
@@ -586,9 +583,9 @@
 
     $('#load_backupset').click(function () {
         $("#bst_static").modal("show");
-        if ($('#bst_status').val()=="complete"){
+        if ($('#bst_status').val() == "complete") {
             var table = $('#bks_dt').dataTable();
-            table.api().ajax.url("../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&back_id=" + $('#back_host').val() + "&main_host=" + $('#main_host option:selected').text().trim()).load();
+            table.api().ajax.url("../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&std_id=" + $('#std_host').val() + "&pri_host=" + $('#pri_host option:selected').text().trim() + "&db_name=" + $('#db_name').val().trim() + "&nbu_install_path=" + $('#nbu_install_path').val().trim()).load();
         } else {
             $('#bst_status').val('');
             $('#bks_dt').dataTable({
@@ -597,16 +594,15 @@
                 "bSort": false,
                 "bProcessing": true,
                 // 备机id
-                "ajax": "../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&back_id=" + $('#back_host').val() + "&main_host=" + $('#main_host  option:selected').text().trim(),
+                "ajax": "../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&std_id=" + $('#std_host').val() + "&pri_host=" + $('#pri_host option:selected').text().trim() + "&db_name=" + $('#db_name').val().trim() + "&nbu_install_path=" + $('#nbu_install_path').val().trim(),
                 "columns": [
-                    { "data": "id" },
-                    { "data": "bks_time" },
-                    { "data": null }
+                    {"data": "id"},
+                    {"data": "bks_time"},
+                    {"data": null}
                 ],
                 "columnDefs": [{
                     "targets": -1,
                     "data": null,
-                    // "defaultContent": "<button  id='select' title='选择'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-check'></i></button>",
                     "mRender": function (data, type, full) {
                         if (full.tag == "last") {
                             return "<button  id='select' class='btn btn-xs btn-primary' type='button'><i class='fa fa-check-circle'></i></button>";
@@ -655,14 +651,14 @@
         // var bcs_data = table.row($(this).parents('tr')).data();
         var bcs_time = "";
         $('#bks_dt tbody').find("button").each(function () {
-            if ($(this).prop('class') == 'btn btn-xs btn-primary'){
+            if ($(this).prop('class') == 'btn btn-xs btn-primary') {
                 bcs_time = $(this).parent().prev().text().trim();
                 return
             }
         });
 
-        var back_id = $('#back_host').val();
-        $('#loadingModal').modal({ backdrop: 'static', keyboard: false });
+        var std_id = $('#std_host').val();
+        $('#loadingModal').modal({backdrop: 'static', keyboard: false});
         // 选择之后，传入process_id/备份集时间 >> 生成/读取配置文件
         // 修改重定向路径/预设增量 >> 重新生成配置文件
         $.ajax({
@@ -672,7 +668,13 @@
             data: {
                 process_id: $('#process_id').val(),
                 bcs_time: bcs_time,
-                back_id: back_id,
+                std_id: std_id,
+
+                std_profile: $('#std_profile').val(),
+                redirect_file_path: $('#redirect_file_path').val(),
+                db_name: $('#db_name').val(),
+                nbu_install_path: $('#nbu_install_path').val(),
+                pre_increasement: $('#pre_increasement').val(),
             },
             success: function (data) {
                 $('#loadingModal').modal('hide');
@@ -698,7 +700,7 @@
                             var pre_file_size = Number(data.data.split_part_list[i].params_list[j].pre_increasement) + Number(data.data.split_part_list[i].params_list[j].actual_capacity);
 
                             // 第一个space_name >> pre_space_name_list添加有重复项的space_name
-                            if (pre_space_name == data.data.split_part_list[i].space_name && pre_space_name_list.indexOf(data.data.split_part_list[i].space_name) == -1){
+                            if (pre_space_name == data.data.split_part_list[i].space_name && pre_space_name_list.indexOf(data.data.split_part_list[i].space_name) == -1) {
                                 pre_space_name_list.push(pre_space_name);
                             } else {
                                 pre_space_name = data.data.split_part_list[i].space_name;
@@ -707,7 +709,7 @@
                             $('#config_edit_table tbody').append(
                                 '<tr id="' + data.data.split_part_list[i].space_name + '" line_text="' + data.data.split_part_list[i].params_list[j].line_text + '" capacity="' + data.data.split_part_list[i].params_list[j].capacity + '">' +
                                 '<td>' +
-                                '&nbsp&nbsp' + data.data.split_part_list[i].space_name + 
+                                '&nbsp&nbsp' + data.data.split_part_list[i].space_name +
                                 '</td>' +
                                 '<td> ' + data.data.split_part_list[i].params_list[j].device_path + ' ' + data.data.split_part_list[i].params_list[j].actual_capacity + ' </td>' +
                                 '<td class="hidden-xs"> ' + data.data.split_part_list[i].params_list[j].device_path + ' </td>' +
@@ -723,7 +725,7 @@
 
                     // 重复项首个添加图案 '  <span><a href="javascript:;" title="合并" name="merge"><i class="fa fa-plus-square-o"></i></a></span>';fa fa-minus-square-o
                     $('#config_edit_table tbody').find('tr');
-                    for (var i = 0; i < pre_space_name_list.length; i++){
+                    for (var i = 0; i < pre_space_name_list.length; i++) {
                         $('#config_edit_table tbody').find('tr[id="' + pre_space_name_list[i] + '"]:eq(0)').find('td:eq(0)').html('&nbsp&nbsp' + pre_space_name_list[i] + '  <span><a href="javascript:;" title="合并" name="merge"><i class="fa fa-minus-square-o"></i></a></span>');
                     }
                 }
@@ -746,14 +748,14 @@
         var merge_icon = td_node.find('i').prop('class');
         var space_name = td_node.text().trim();
 
-        if (merge_icon == "fa fa-minus-square-o"){
+        if (merge_icon == "fa fa-minus-square-o") {
             // 合并
             td_node.html('&nbsp&nbsp' + space_name + '  <span><a href="javascript:;" title="展开" name="merge"><i class="fa fa-plus-square-o"></i></a></span>');
             // 该节点后面的所有同space_name的节点都隐藏
             td_node.parent().nextAll().each(function () {
-                if ($(this).find('td:eq(0)').text().trim() == space_name){
+                if ($(this).find('td:eq(0)').text().trim() == space_name) {
                     $(this).css('display', "none");
-                } 
+                }
             });
         } else {
             // 拆分
@@ -765,7 +767,7 @@
                 }
             });
         }
-    })
+    });
 
 
     var direct_node = '',
@@ -801,7 +803,7 @@
     $('#patch_edit_save').click(function () {
         var patch_edit_redirect_path = $('#patch_edit_redirect_path').val().trim();
 
-        if (patch_edit_redirect_path.split("/").slice(-1) != ""){
+        if (patch_edit_redirect_path.split("/").slice(-1) != "") {
             patch_edit_redirect_path = patch_edit_redirect_path + "/"
         }
 
@@ -816,11 +818,68 @@
         $('#patch_edit_static').modal('hide');
     });
 
-    // 切换备机 加载备份集
-    // var database = $('#database').val();
-    // $('#back_host').change(function () {
-    //     if (database == "db2") {
-    //         $('#load_backupset').trigger('click');
-    //     }
-    // });
+    var param_list = JSON.parse($('#param_list').val());
+    // 切换源备机，加载参数
+    $('#pri_host').change(function () {
+        $('#pri').empty();
+        var pri_host_id = $(this).val();
+        for (var i = 0; i < param_list.length; i++) {
+            if (pri_host_id == param_list[i].host_id) {
+                $('#pri_host_type_display').val(param_list[i].host_type_display);
+
+                var host_config_list = param_list[i].host_config_list;
+                console.log(host_config_list)
+                for (var j = 0; j < host_config_list.length; j++) {
+                    $('#pri').append('<div class="form-group">\n' +
+                        '    <label class="col-md-3 control-label" style="padding-left: 0;">' + host_config_list[j].param_name + '</label>\n' +
+                        '    <div class="col-md-9">\n' +
+                        '        <input id="' + host_config_list[j].variable_name + '" type="text" name="' + host_config_list[j].variable_name + '" class="form-control"\n' +
+                        '               value="' +host_config_list[j].param_value + '"\n' +
+                        '               readonly>\n' +
+                        '        <div class="form-control-focus"></div>\n' +
+                        '\n' +
+                        '    </div>\n' +
+                        '</div>');
+                }
+            }
+        }
+        load_backupset_display();
+    });
+
+    $('#std_host').change(function () {
+        $('#std').empty();
+        var std_host_id = $(this).val();
+        for (var i = 0; i < param_list.length; i++) {
+            if (std_host_id == param_list[i].host_id) {
+                $('#std_host_type_display').val(param_list[i].host_type_display);
+
+                var host_config_list = param_list[i].host_config_list;
+
+                for (var j = 0; j < host_config_list.length; j++) {
+                    $('#std').append('<div class="form-group">\n' +
+                        '    <label class="col-md-3 control-label" style="padding-left: 0;">' + host_config_list[j].param_name + '</label>\n' +
+                        '    <div class="col-md-9">\n' +
+                        '        <input id="' + host_config_list[j].variable_name + '" type="text" name="' + host_config_list[j].variable_name + '" class="form-control"\n' +
+                        '               value="' +host_config_list[j].param_value + '"\n' +
+                        '               readonly>\n' +
+                        '        <div class="form-control-focus"></div>\n' +
+                        '\n' +
+                        '    </div>\n' +
+                        '</div>');
+                }
+            }
+        }
+        load_backupset_display();
+    });
+
+    function load_backupset_display() {
+        var pri_host_type_display = $('#pri_host_type_display').val();
+        var std_host_type_display = $('#std_host_type_display').val();
+
+        if (pri_host_type_display.indexOf("DB2") != -1 && std_host_type_display.indexOf("DB2") != -1) {
+            $('#load_backupset').parent().show();
+        } else {
+            $('#load_backupset').parent().hide();
+        }
+    }
 });
