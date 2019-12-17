@@ -178,6 +178,12 @@
                 // 主机变量
                 main_host: $('#main_host').val(),
                 back_host: $('#back_host').val(),
+
+                // db2.conf文件所需参数
+                db_name: $('#db_name').val(),
+                storage_policy: $('#storage_policy').val(),
+                client_name: $('#client_name').val(),
+                schedule_policy: $('#schedule_policy').val(),
             },
             success: function (data) {
                 $('#waiting_run').modal('hide');
@@ -546,9 +552,17 @@
         if (database == "db2"){
             $('#load_backupset').parent().show();
             $('#run_div').hide();
+
+            $('#db2_conf').show();
+            $('#db_name').val("");
+            $('#storage_policy').val("");
+            $('#client_name').val("");
+            $('#schedule_policy').val("");
         } else {
             $('#load_backupset').parent().hide();
             $('#run_div').show();
+
+            $('#db2_conf').hide();
         }
     });
 

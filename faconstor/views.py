@@ -3998,6 +3998,12 @@ def cv_oracle_run(request):
         # 恢复变量
         select_time = request.POST.get('select_time', '')
 
+        # db2.conf文件生成所需参数
+        c_db_name = request.POST.get('db_name', '')
+        storage_policy = request.POST.get('storage_policy', '')
+        client_name = request.POST.get('client_name', '')
+        schedule_policy = request.POST.get('schedule_policy', '')
+
         try:
             main_host = int(main_host)
         except ValueError as e:
@@ -4032,6 +4038,11 @@ def cv_oracle_run(request):
                         db_name = param_el.attrib.get("param_value", "")
                     if variable_name == "config_path":
                         config_path = param_el.attrib.get("param_value", "")
+
+                        if config_path.endswith("/"):
+                            pass
+                        else:
+                            config_path = config_path + "/"
 
                     system_els = config.xpath("//config")
                     if system_els:
@@ -4070,12 +4081,7 @@ def cv_oracle_run(request):
                     })
                 else:
                     try:
-                        remote_path = ""
-
-                        if config_path.endswith("/"):
-                            remote_path = config_path + "{db_name}.txt".format(db_name=db_name)
-                        else:
-                            remote_path = config_path + "/{db_name}.txt".format(db_name=db_name)
+                        remote_path = config_path + "{db_name}.txt".format(db_name=c_db_name if c_db_name else db_name)
 
                         sftp.put(db2_config_path, remote_path)
                     except FileNotFoundError as e:
@@ -4084,6 +4090,24 @@ def cv_oracle_run(request):
                         })
                     if ssh:
                         ssh.close()
+
+                # 写入db2.conf
+                db2_conf_path = config_path + 'db2.conf'
+                db2_conf_text = "DATABASE {db_name}".format(db_name=c_db_name) + "\n" + \
+                                "OBJECTTYPE DATABASE" + "\n" + \
+                                "POLICY {storage_policy}".format(storage_policy=storage_policy) + "\n" + \
+                                "CLIENT_NAME {client_name}".format(client_name=client_name) + "\n" + \
+                                "SCHEDULE {schedule_policy}".format(schedule_policy=schedule_policy) + "\n" + \
+                                "ENDOPER"
+
+                db2_conf_cmd = """sh -c 'echo "{db2_conf_text}" > {db2_conf_path}'""".format(db2_conf_text=db2_conf_text,
+                                                                                           db2_conf_path=db2_conf_path)
+                set_db2_conf = remote.ServerByPara(db2_conf_cmd, backup_ip, backup_username, backup_passwd, system)
+                set_db2_conf_result = set_db2_conf.run("")
+                if set_db2_conf_result['exec_tag'] == 1:
+                    return JsonResponse({
+                        "res": "db2.conf文件生成失败。{error}".format(error=set_db2_conf_result['data'])
+                    })
 
             running_process = ProcessRun.objects.filter(process=process, state__in=["RUN", "ERROR"])
             if (len(running_process) > 0):
@@ -4142,7 +4166,7 @@ def cv_oracle_run(request):
                     # 指定时间点/前2天 日志开始时间 日志结束时间
                     restore_param_dict = {
                         # "select_time": select_strp_time.strftime("%m/%d/%Y %H:%M:%S"),
-                        "select_time": select_strp_time.strftime("%Y-%m-%d-%H.%M.%S") + "000000",
+                        "select_time": select_strp_time.strftime("%Y-%m-%d-%H.%M.%S") + ".000000",
                         "log_start_time": log_start_time.strftime("%m/%d/%Y %H:%M:%S"),
                         "log_end_time": log_end_time.strftime("%m/%d/%Y %H:%M:%S"),
                     }
@@ -7845,8 +7869,8 @@ def load_backupset(request):
                     try:
                         # backupset_edt 前两天
                         c_backupset_stt = (
-                                    datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S") - datetime.timedelta(
-                                days=30)).strftime("%m/%d/%Y %H:%M:%S")
+                                datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S") - datetime.timedelta(
+                            days=30)).strftime("%m/%d/%Y %H:%M:%S")
                         c_backupset_edt = datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S").strftime(
                             "%m/%d/%Y %H:%M:%S")
                     except:

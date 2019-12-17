@@ -1,23 +1,23 @@
 "-- *****************************************************************************
 -- ** automatically created redirect restore script
 -- *****************************************************************************
-UPDATE COMMAND OPTIONS USING S ON Z ON TESUDB_NODE0000.out V ON;
+UPDATE COMMAND OPTIONS USING S ON Z ON ERP_NODE0000.out V ON;
 SET CLIENT ATTACH_DBPARTITIONNUM  0;
 SET CLIENT CONNECT_DBPARTITIONNUM 0;
 -- *****************************************************************************
 -- ** automatically created redirect restore script
 -- *****************************************************************************
-RESTORE DATABASE TESUDB
+RESTORE DATABASE ERP
 -- USER  <username>
 -- USING '<password>'
 LOAD '/usr/openv/netbackup/bin/nbdb2.so64'
 OPEN 4 SESSIONS
 -- OPTIONS '<options-string>'
-TAKEN AT 20191214133138
+TAKEN AT 20191216221512
 -- ON '/home/db2inst1'
 -- DBPATH ON '<target-directory>'
-INTO TESUDB
--- NEWLOGPATH '/home/db2inst1/db2inst1/NODE0000/SQL00003/SQLOGDIR/'
+INTO ERP
+-- NEWLOGPATH '/home/db2inst1/db2inst1/NODE0000/SQL00001/SQLOGDIR/'
 -- WITH <num-buff> BUFFERS
 -- BUFFER <buffer-size>
 -- REPLACE HISTORY FILE
@@ -41,7 +41,7 @@ REDIRECT
 -- **   Auto-resize enabled                      = Yes     
 -- **   Total number of pages                    = 24576
 -- **   Number of usable pages                   = 24572
--- **   High water mark (pages)                  = 17688
+-- **   High water mark (pages)                  = 17624
 -- *****************************************************************************
 -- *****************************************************************************
 -- ** Tablespace name                            = TEMPSPACE1
@@ -80,7 +80,7 @@ REDIRECT
 -- **   High water mark (pages)                  = 152
 -- *****************************************************************************
 -- *****************************************************************************
--- ** Tablespace name                            = LVTBS
+-- ** Tablespace name                            = ERPTBS1
 -- **   Tablespace ID                            = 4
 -- **   Tablespace Type                          = Database managed space                      
 -- **   Tablespace Content Type                  = All permanent data. Large table space.      
@@ -88,17 +88,17 @@ REDIRECT
 -- **   Tablespace Extent size (pages)           = 32
 -- **   Using automatic storage                  = No      
 -- **   Auto-resize enabled                      = No      
--- **   Total number of pages                    = 2048
--- **   Number of usable pages                   = 2016
--- **   High water mark (pages)                  = 352
+-- **   Total number of pages                    = 4096
+-- **   Number of usable pages                   = 4064
+-- **   High water mark (pages)                  = 160
 -- *****************************************************************************
 SET TABLESPACE CONTAINERS FOR 4
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
-  FILE '/home/db2inst1/tesudb_test/raw3'                                                    2352
+  FILE '/home/db2inst1/tesudb_test/raw1'                                                    2160
 );
 -- *****************************************************************************
--- ** Tablespace name                            = LVTBS2
+-- ** Tablespace name                            = ERPTBS2
 -- **   Tablespace ID                            = 5
 -- **   Tablespace Type                          = Database managed space                      
 -- **   Tablespace Content Type                  = All permanent data. Large table space.      
@@ -113,41 +113,13 @@ USING (
 SET TABLESPACE CONTAINERS FOR 5
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
-  FILE '/home/db2inst1/tesudb_test/raw1'                                                    2160
+  FILE '/home/db2inst1/tesudb_test/raw2'                                                    2160
 
 );
 -- *****************************************************************************
--- ** Tablespace name                            = LVTBS3
--- **   Tablespace ID                            = 6
--- **   Tablespace Type                          = Database managed space                      
--- **   Tablespace Content Type                  = All permanent data. Large table space.      
--- **   Tablespace Page size (bytes)             = 4096
--- **   Tablespace Extent size (pages)           = 32
--- **   Using automatic storage                  = No      
--- **   Auto-resize enabled                      = No      
--- **   Total number of pages                    = 2048
--- **   Number of usable pages                   = 2016
--- **   High water mark (pages)                  = 160
--- *****************************************************************************
-SET TABLESPACE CONTAINERS FOR 6
--- IGNORE ROLLFORWARD CONTAINER OPERATIONS
-USING (
-  FILE '/home/db2inst1/tesudb_test/raw4'                                                    2160
-);
--- *****************************************************************************
--- ** Tablespace name                            = SYSTOOLSTMPSPACE
--- **   Tablespace ID                            = 7
--- **   Tablespace Type                          = System managed space                        
--- **   Tablespace Content Type                  = User Temporary data                         
--- **   Tablespace Page size (bytes)             = 4096
--- **   Tablespace Extent size (pages)           = 4
--- **   Using automatic storage                  = Yes     
--- **   Total number of pages                    = 1
--- *****************************************************************************
--- *****************************************************************************
 -- ** start redirected restore
 -- *****************************************************************************
-RESTORE DATABASE TESUDB CONTINUE;
+RESTORE DATABASE ERP CONTINUE;
 -- *****************************************************************************
 -- ** end of file
 -- *****************************************************************************
