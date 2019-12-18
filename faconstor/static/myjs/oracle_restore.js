@@ -561,6 +561,8 @@
 
         $('#pri_host_type_display').val("");
         $('#std_host_type_display').val("");
+
+        $('#run_div').hide();
     });
 
     $('#backupset_edt').datetimepicker({
