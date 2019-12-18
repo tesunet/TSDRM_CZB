@@ -828,14 +828,13 @@
                 $('#pri_host_type_display').val(param_list[i].host_type_display);
 
                 var host_config_list = param_list[i].host_config_list;
-                console.log(host_config_list)
                 for (var j = 0; j < host_config_list.length; j++) {
                     $('#pri').append('<div class="form-group">\n' +
                         '    <label class="col-md-3 control-label" style="padding-left: 0;">' + host_config_list[j].param_name + '</label>\n' +
                         '    <div class="col-md-9">\n' +
                         '        <input id="' + host_config_list[j].variable_name + '" type="text" name="' + host_config_list[j].variable_name + '" class="form-control"\n' +
                         '               value="' +host_config_list[j].param_value + '"\n' +
-                        '               readonly>\n' +
+                        '               >\n' +
                         '        <div class="form-control-focus"></div>\n' +
                         '\n' +
                         '    </div>\n' +
@@ -861,7 +860,7 @@
                         '    <div class="col-md-9">\n' +
                         '        <input id="' + host_config_list[j].variable_name + '" type="text" name="' + host_config_list[j].variable_name + '" class="form-control"\n' +
                         '               value="' +host_config_list[j].param_value + '"\n' +
-                        '               readonly>\n' +
+                        '               >\n' +
                         '        <div class="form-control-focus"></div>\n' +
                         '\n' +
                         '    </div>\n' +
