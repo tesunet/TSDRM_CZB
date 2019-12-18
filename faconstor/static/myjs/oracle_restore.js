@@ -828,7 +828,6 @@
                 $('#pri_host_type_display').val(param_list[i].host_type_display);
 
                 var host_config_list = param_list[i].host_config_list;
-                console.log(host_config_list)
                 for (var j = 0; j < host_config_list.length; j++) {
                     $('#pri').append('<div class="form-group">\n' +
                         '    <label class="col-md-4 control-label" style="padding-left: 0;">' + host_config_list[j].param_name + '</label>\n' +
