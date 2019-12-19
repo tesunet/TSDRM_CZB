@@ -149,7 +149,7 @@
                                     <select name="pri_host" id="pri_host" class='form-control'>
                                         {% for host in param_list %}
                                             {% if host.host_type_tag == 1 %}
-                                            <option value="{{ host.host_id }}">{{ host.host_name }}</option>
+                                                <option value="{{ host.host_id }}">{{ host.host_name }}</option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
@@ -161,7 +161,7 @@
                                     <select name="std_host" id="std_host" class='form-control'>
                                         {% for host in param_list %}
                                             {% if host.host_type_tag == 0 %}
-                                            <option value="{{ host.host_id }}">{{ host.host_name }}</option>
+                                                <option value="{{ host.host_id }}">{{ host.host_name }}</option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
@@ -174,43 +174,49 @@
                                 <div class="col-md-5">
                                     <input type="text" id="pri_host_type_display" hidden>
                                     <div class="row col-md-12" style="margin-left: 15px;padding-left: 0;" id="pri">
-{#                                        <div class="form-group">#}
-{#                                            <label class="col-md-3 control-label" style="padding-left: 0;">主机参数1</label>#}
-{#                                            <div class="col-md-9">#}
-{#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
-{#                                                       placeholder=""#}
-{#                                                       readonly>#}
-{#                                                <div class="form-control-focus"></div>#}
-{##}
-{#                                            </div>#}
-{#                                        </div>#}
-{#                                        <div class="form-group">#}
-{#                                            <label class="col-md-3 control-label" style="padding-left: 0;">主机参数2</label>#}
-{#                                            <div class="col-md-9">#}
-{#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
-{#                                                       placeholder=""#}
-{#                                                       readonly>#}
-{#                                                <div class="form-control-focus"></div>#}
-{##}
-{#                                            </div>#}
-{#                                        </div>#}
+                                        {#                                        <div class="form-group">#}
+                                        {#                                            <label class="col-md-3 control-label" style="padding-left: 0;">主机参数1</label>#}
+                                        {#                                            <div class="col-md-9">#}
+                                        {#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
+                                        {#                                                       placeholder=""#}
+                                        {#                                                       readonly>#}
+                                        {#                                                <div class="form-control-focus"></div>#}
+                                        {##}
+                                        {#                                            </div>#}
+                                        {#                                        </div>#}
+                                        {#                                        <div class="form-group">#}
+                                        {#                                            <label class="col-md-3 control-label" style="padding-left: 0;">主机参数2</label>#}
+                                        {#                                            <div class="col-md-9">#}
+                                        {#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
+                                        {#                                                       placeholder=""#}
+                                        {#                                                       readonly>#}
+                                        {#                                                <div class="form-control-focus"></div>#}
+                                        {##}
+                                        {#                                            </div>#}
+                                        {#                                        </div>#}
                                     </div>
                                 </div>
                                 <label class="col-md-1 control-label"></label>
                                 <div class="col-md-5">
                                     <input type="text" id="std_host_type_display" hidden>
                                     <div class="row col-md-12" style="margin-left: 15px;padding-left: 0;" id="std">
-{#                                        <div class="form-group">#}
-{#                                            <label class="col-md-3 control-label" style="padding-left: 0;">备机参数1</label>#}
-{#                                            <div class="col-md-9">#}
-{#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
-{#                                                       placeholder=""#}
-{#                                                       readonly>#}
-{#                                                <div class="form-control-focus"></div>#}
-{##}
-{#                                            </div>#}
-{#                                        </div>#}
+                                        {#                                        <div class="form-group">#}
+                                        {#                                            <label class="col-md-3 control-label" style="padding-left: 0;">备机参数1</label>#}
+                                        {#                                            <div class="col-md-9">#}
+                                        {#                                                <input id="run_time" type="text" name="run_time" class="form-control"#}
+                                        {#                                                       placeholder=""#}
+                                        {#                                                       readonly>#}
+                                        {#                                                <div class="form-control-focus"></div>#}
+                                        {##}
+                                        {#                                            </div>#}
+                                        {#                                        </div>#}
                                     </div>
+                                </div>
+                            </div>
+                            <div class="form-group" id='set_db2_conf_div' hidden>
+                                <div class="col-md-10"></div>
+                                <div class="col-md-2">
+                                    <input id="set_db2_conf" type="button" value="写入配置文件" class="btn green">
                                 </div>
                             </div>
 
@@ -416,6 +422,13 @@
                     </form>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="set_db2_conf_loading" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class='modal-dialog'
+             style="font-size:25px;color:grey;width: 400px;position: absolute; height:100px;left: 55%; top: 38%;margin-left:-200px;margin-top:-100px;">
+            写入配置中<img src="/static/new/images/loading.gif" alt="">
         </div>
     </div>
     <div id="loadingModal" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">

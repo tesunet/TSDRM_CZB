@@ -563,6 +563,7 @@
         $('#std_host_type_display').val("");
 
         $('#run_div').hide();
+        $('#load_backupset').parent().hide();
     });
 
     $('#backupset_edt').datetimepicker({
@@ -835,7 +836,7 @@
                         '    <label class="col-md-4 control-label" style="padding-left: 0;">' + host_config_list[j].param_name + '</label>\n' +
                         '    <div class="col-md-8">\n' +
                         '        <input id="' + host_config_list[j].variable_name + '" type="text" name="' + host_config_list[j].variable_name + '" class="form-control"\n' +
-                        '               value="' +host_config_list[j].param_value + '"\n' +
+                        '               value="' + host_config_list[j].param_value + '"\n' +
                         '               >\n' +
                         '        <div class="form-control-focus"></div>\n' +
                         '\n' +
@@ -861,7 +862,7 @@
                         '    <label class="col-md-4 control-label" style="padding-left: 0;">' + host_config_list[j].param_name + '</label>\n' +
                         '    <div class="col-md-8">\n' +
                         '        <input id="' + host_config_list[j].variable_name + '" type="text" name="' + host_config_list[j].variable_name + '" class="form-control"\n' +
-                        '               value="' +host_config_list[j].param_value + '"\n' +
+                        '               value="' + host_config_list[j].param_value + '"\n' +
                         '               >\n' +
                         '        <div class="form-control-focus"></div>\n' +
                         '\n' +
@@ -878,9 +879,43 @@
         var std_host_type_display = $('#std_host_type_display').val();
 
         if (pri_host_type_display.indexOf("DB2") != -1 && std_host_type_display.indexOf("DB2") != -1) {
-            $('#load_backupset').parent().show();
+            $('#set_db2_conf_div').show();
         } else {
-            $('#load_backupset').parent().hide();
+            $('#set_db2_conf_div').hide();
         }
     }
+
+    // 写入db2.conf配置文件，再载入备份集
+    $('#set_db2_conf').click(function () {
+        $('#set_db2_conf_loading').modal({backdrop: 'static', keyboard: false});
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "../../set_db2_conf/",
+            data: {
+                pri_host_id: $('#pri_host').val(),
+                std_host_id: $('#std_host').val(),
+
+                // 源机参数：db2.conf文件所需参数
+                db_name: $('#db_name').val(),
+                storage_policy: $('#storage_policy').val(),
+                client_name: $('#client_name').val(),
+                schedule_policy: $('#schedule_policy').val(),
+                redirect_file_path: $('#redirect_file_path').val(),
+            },
+            success: function (data) {
+                if (data.ret == 1) {
+                    $('#load_backupset').parent().show();
+                } else {
+                    $('#load_backupset').parent().hide();
+                }
+                $('#set_db2_conf_loading').modal('hide');
+                alert(data.data);
+            },
+            error: function () {
+                alert("页面出现错误，请于管理员联系。");
+                $('#set_db2_conf_loading').modal('hide');
+            }
+        });
+    });
 });

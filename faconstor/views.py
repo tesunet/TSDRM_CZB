@@ -4030,23 +4030,23 @@ def process_startup(request):
                         if ssh:
                             ssh.close()
 
-                    # 写入db2.conf
-                    db2_conf_path = redirect_file_path + 'db2.conf'
-                    db2_conf_text = "DATABASE {db_name}".format(db_name=db_name) + "\n" + \
-                                    "OBJECTTYPE DATABASE" + "\n" + \
-                                    "POLICY {storage_policy}".format(storage_policy=storage_policy) + "\n" + \
-                                    "CLIENT_NAME {client_name}".format(client_name=client_name) + "\n" + \
-                                    "SCHEDULE {schedule_policy}".format(schedule_policy=schedule_policy) + "\n" + \
-                                    "ENDOPER"
-
-                    db2_conf_cmd = """sh -c 'echo "{db2_conf_text}" > {db2_conf_path}'""".format(db2_conf_text=db2_conf_text,
-                                                                                               db2_conf_path=db2_conf_path)
-                    set_db2_conf = remote.ServerByPara(db2_conf_cmd, std_host_ip, std_host_username, std_host_passwd, std_host_system)
-                    set_db2_conf_result = set_db2_conf.run("")
-                    if set_db2_conf_result['exec_tag'] == 1:
-                        return JsonResponse({
-                            "res": "db2.conf文件生成失败。{error}".format(error=set_db2_conf_result['data'])
-                        })
+                    # # 写入db2.conf
+                    # db2_conf_path = redirect_file_path + 'db2.conf'
+                    # db2_conf_text = "DATABASE {db_name}".format(db_name=db_name) + "\n" + \
+                    #                 "OBJECTTYPE DATABASE" + "\n" + \
+                    #                 "POLICY {storage_policy}".format(storage_policy=storage_policy) + "\n" + \
+                    #                 "CLIENT_NAME {client_name}".format(client_name=client_name) + "\n" + \
+                    #                 "SCHEDULE {schedule_policy}".format(schedule_policy=schedule_policy) + "\n" + \
+                    #                 "ENDOPER"
+                    #
+                    # db2_conf_cmd = """sh -c 'echo "{db2_conf_text}" > {db2_conf_path}'""".format(db2_conf_text=db2_conf_text,
+                    #                                                                            db2_conf_path=db2_conf_path)
+                    # set_db2_conf = remote.ServerByPara(db2_conf_cmd, std_host_ip, std_host_username, std_host_passwd, std_host_system)
+                    # set_db2_conf_result = set_db2_conf.run("")
+                    # if set_db2_conf_result['exec_tag'] == 1:
+                    #     return JsonResponse({
+                    #         "res": "db2.conf文件生成失败。{error}".format(error=set_db2_conf_result['data'])
+                    #     })
 
                     running_process = ProcessRun.objects.filter(process=process, state__in=["RUN", "ERROR"])
                     if (len(running_process) > 0):
@@ -8020,5 +8020,74 @@ def set_rec_config(request):
                 "ret": 1,
                 "data": whole_dict
             })
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def set_db2_conf(request):
+    if request.user.is_authenticated():
+        # 源机参数：db2.conf文件生成所需参数
+        db_name = request.POST.get('db_name', '')
+        storage_policy = request.POST.get('storage_policy', '')
+        client_name = request.POST.get('client_name', '')
+        schedule_policy = request.POST.get('schedule_policy', '')
+        redirect_file_path = request.POST.get('redirect_file_path', '')
+
+        pri_host_id = request.POST.get('pri_host_id', '')
+        std_host_id = request.POST.get('std_host_id', '')
+
+        try:
+            std_host_id = int(std_host_id)
+        except ValueError as e:
+            return JsonResponse({"res": "备机未选择。"})
+
+
+        try:
+            pri_host_id = int(pri_host_id)
+        except ValueError as e:
+            return JsonResponse({"res": "源机未选择。"})
+
+        # 备机信息
+        try:
+            std_host = HostsManage.objects.get(id=std_host_id)
+        except HostsManage.DoesNotExist as e:
+            return JsonResponse({"res": "该备机不存在。"})
+        else:
+            if redirect_file_path.endswith("/"):
+                pass
+            else:
+                redirect_file_path = redirect_file_path + "/"
+
+            std_host_ip = std_host.host_ip
+            std_host_name = std_host.host_name
+            std_host_username = std_host.username
+            std_host_passwd = std_host.password
+            std_host_system = std_host.os
+
+            # 写入db2.conf
+            db2_conf_path = redirect_file_path + 'db2.conf'
+            db2_conf_text = "DATABASE {db_name}".format(db_name=db_name) + "\n" + \
+                            "OBJECTTYPE DATABASE" + "\n" + \
+                            "POLICY {storage_policy}".format(storage_policy=storage_policy) + "\n" + \
+                            "CLIENT_NAME {client_name}".format(client_name=client_name) + "\n" + \
+                            "SCHEDULE {schedule_policy}".format(schedule_policy=schedule_policy) + "\n" + \
+                            "ENDOPER"
+
+            db2_conf_cmd = """sh -c 'echo "{db2_conf_text}" > {db2_conf_path}'""".format(db2_conf_text=db2_conf_text,
+                                                                                         db2_conf_path=db2_conf_path)
+            set_db2_conf = remote.ServerByPara(db2_conf_cmd, std_host_ip, std_host_username, std_host_passwd,
+                                               std_host_system)
+            set_db2_conf_result = set_db2_conf.run("")
+
+            if set_db2_conf_result['exec_tag'] == 1:
+                return JsonResponse({
+                    "ret": 0,
+                    "data": "db2.conf文件生成失败。{error}".format(error=set_db2_conf_result['data'])
+                })
+
+        return JsonResponse({
+            "ret": 1,
+            "data": "写入配置成功。"
+        })
     else:
         return HttpResponseRedirect("/login")
