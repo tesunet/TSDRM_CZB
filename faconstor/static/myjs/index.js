@@ -21,8 +21,7 @@ var Dashboard = function () {
                         title: {
                             text: '次数 (次)'
                         },
-                        categories: ['1', '2', '3', '4', '5', '6',
-                            '7', '8', '9', '10', '11', '12']
+                        reversed: true,
                     },
                     colors: [
                         '#3598dc',
@@ -67,6 +66,13 @@ var Dashboard = function () {
                             "color": data.data[i].color,
                         });
                     }
+                    // 动态生成横坐标
+                    // 从1开始
+                    var category_list = [];
+                    for (var j = 1; j <= 50; j++) {
+                        category_list.push(j)
+                    }
+                    chart.xAxis[0].setCategories(category_list);
                 }
 
             });
