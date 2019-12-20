@@ -171,5 +171,4 @@ urlpatterns = [
     # 加载备份集
     url(r'^load_backupset/$', load_backupset),
     url(r'^set_rec_config/$', set_rec_config),
-    url(r'^set_db2_conf/$', set_db2_conf),
 ]

@@ -66,7 +66,7 @@ class Process(models.Model):
     url = models.CharField("页面链接", blank=True, max_length=100)
     type = models.CharField("预案类型", blank=True, max_length=100, null=True)
     color = models.CharField("颜色", blank=True, max_length=50)
-    config = models.TextField("XML格式存放预案变量/系统数据库信息", blank=True, null=True)
+    config = models.TextField("XML格式存放预案变量/系统数据库信息", blank=True, null=True, default="<root></root>")
 
 
 class Step(models.Model):
@@ -163,14 +163,10 @@ class HostsManage(models.Model):
         (4, "Oracle备机")
     )
     host_type = models.IntegerField("主机类型", choices=host_type_choice, null=True, blank=True)
-    config = models.TextField("主机相关配置", blank=True, null=True)
+    config = models.TextField("主机相关配置", blank=True, null=True, default="<root></root>")
 
 
 class Script(models.Model):
-    hosts_manage = models.ForeignKey(HostsManage,
-                                     blank=True,
-                                     null=True,
-                                     verbose_name='主机管理')
     step = models.ForeignKey(Step, blank=True, null=True)
     code = models.CharField("脚本编号", blank=True, max_length=50)
     name = models.CharField("脚本名称", blank=True, max_length=500)
@@ -235,7 +231,7 @@ class ProcessRun(models.Model):
     db_open = models.IntegerField("是否打开数据库", default=1, null=True)
 
     rto = models.IntegerField("流程RTO", default=0, null=True)
-    config = models.TextField("恢复变量/主机变量", blank=True, null=True)
+    config = models.TextField("恢复变量/主机变量", blank=True, null=True, default="<root></root>")
 
 
 class StepRun(models.Model):

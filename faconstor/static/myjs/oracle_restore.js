@@ -671,13 +671,20 @@
             data: {
                 process_id: $('#process_id').val(),
                 bcs_time: bcs_time,
-                std_id: std_id,
 
                 std_profile: $('#std_profile').val(),
-                redirect_file_path: $('#redirect_file_path').val(),
-                db_name: $('#db_name').val(),
                 nbu_install_path: $('#nbu_install_path').val(),
                 pre_increasement: $('#pre_increasement').val(),
+
+                pri_host_id: $('#pri_host').val(),
+                std_host_id: $('#std_host').val(),
+
+                // 源机参数：db2.conf文件所需参数
+                db_name: $('#db_name').val(),
+                storage_policy: $('#storage_policy').val(),
+                client_name: $('#client_name').val(),
+                schedule_policy: $('#schedule_policy').val(),
+                redirect_file_path: $('#redirect_file_path').val()
             },
             success: function (data) {
                 $('#loadingModal').modal('hide');
@@ -879,43 +886,9 @@
         var std_host_type_display = $('#std_host_type_display').val();
 
         if (pri_host_type_display.indexOf("DB2") != -1 && std_host_type_display.indexOf("DB2") != -1) {
-            $('#set_db2_conf_div').show();
+            $('#load_backupset').parent().show();
         } else {
-            $('#set_db2_conf_div').hide();
+            $('#load_backupset').parent().hide();
         }
     }
-
-    // 写入db2.conf配置文件，再载入备份集
-    $('#set_db2_conf').click(function () {
-        $('#set_db2_conf_loading').modal({backdrop: 'static', keyboard: false});
-        $.ajax({
-            type: "POST",
-            dataType: "json",
-            url: "../../set_db2_conf/",
-            data: {
-                pri_host_id: $('#pri_host').val(),
-                std_host_id: $('#std_host').val(),
-
-                // 源机参数：db2.conf文件所需参数
-                db_name: $('#db_name').val(),
-                storage_policy: $('#storage_policy').val(),
-                client_name: $('#client_name').val(),
-                schedule_policy: $('#schedule_policy').val(),
-                redirect_file_path: $('#redirect_file_path').val(),
-            },
-            success: function (data) {
-                if (data.ret == 1) {
-                    $('#load_backupset').parent().show();
-                } else {
-                    $('#load_backupset').parent().hide();
-                }
-                $('#set_db2_conf_loading').modal('hide');
-                alert(data.data);
-            },
-            error: function () {
-                alert("页面出现错误，请于管理员联系。");
-                $('#set_db2_conf_loading').modal('hide');
-            }
-        });
-    });
 });

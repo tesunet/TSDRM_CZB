@@ -208,13 +208,15 @@ class ServerByPara(object):
             if self.client:
                 self.client.close()
         elif self.system_choice == "AIX":
+            self.cmd.replace('#!/bin/sh', '#!/bin/ksh').replace('#!/bin/bash', '#!/bin/ksh')
             result = self.exec_linux_cmd(succeedtext, port=20)
             if self.client:
                 self.client.close()
         else:
             result = self.exec_win_cmd(succeedtext)
-        # print(result)
+        print(result)
         return result
+
 
 if __name__ == '__main__':
     # server_obj = ServerByPara(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

@@ -220,13 +220,11 @@ function customTree() {
 
                         $("#success_text").val("");
                         $("#log_address").val("");
-                        $("#host_id").val("");
 
                         $("#origin").val("");
                         $("#commv_interface").val("");
                         $("#interface_type").val("");
 
-                        $("#host_id_div").hide();
                         $("#script_text_div").hide();
                         $("#success_text_div").hide();
                         $("#log_address_div").hide();
@@ -259,14 +257,12 @@ function customTree() {
 
                                         // 判断是否为commvault
                                         if (data.interface_type == "commvault") {
-                                            $("#host_id_div").hide();
                                             $("#script_text_div").hide();
                                             $("#success_text_div").hide();
                                             $("#log_address_div").hide();
                                             $("#origin_div").show();
                                             $("#commv_interface_div").show();
                                         } else {
-                                            $("#host_id_div").show();
                                             $("#script_text_div").show();
                                             $("#success_text_div").show();
                                             $("#log_address_div").show();
@@ -274,7 +270,6 @@ function customTree() {
                                             $("#commv_interface_div").hide();
                                         }
 
-                                        $("#host_id").val(data.host_id);
                                         $("#script_text").val(data.script_text);
                                         $("#success_text").val(data.success_text);
                                         $("#log_address").val(data.log_address);
@@ -445,14 +440,12 @@ function customTree() {
             $("#interface_type").change(function () {
                 var interface_type = $(this).val();
                 if (interface_type == "commvault") {
-                    $("#host_id_div").hide();
                     $("#script_text_div").hide();
                     $("#success_text_div").hide();
                     $("#log_address_div").hide();
                     $("#origin_div").show();
                     $("#commv_interface_div").show();
                 } else {
-                    $("#host_id_div").show();
                     $("#script_text_div").show();
                     $("#success_text_div").show();
                     $("#log_address_div").show();
@@ -479,14 +472,12 @@ $('#sample_1 tbody').on('click', 'button#select', function () {
 
     // 判断是否为commvault
     if (data.interface_type == "commvault") {
-        $("#host_id_div").hide();
         $("#script_text_div").hide();
         $("#success_text_div").hide();
         $("#log_address_div").hide();
         $("#origin_div").show();
         $("#commv_interface_div").show();
     } else {
-        $("#host_id_div").show();
         $("#script_text_div").show();
         $("#success_text_div").show();
         $("#log_address_div").show();
@@ -499,10 +490,8 @@ $('#sample_1 tbody').on('click', 'button#select', function () {
     $("#script_text").val(data.script_text);
     $("#success_text").val(data.success_text);
     $("#log_address").val(data.log_address);
-    $("#host_id").val(data.host_id);
 
     // commvault
-    console.log(data.host_id);
     $("#interface_type").val(data.interface_type);
     $("#origin").val(data.origin);
     $("#commv_interface").val(data.commv_interface);
@@ -531,7 +520,6 @@ $('#scriptsave').click(function () {
             script_text: $("#script_text").val(),
             success_text: $("#success_text").val(),
             log_address: $("#log_address").val(),
-            host_id: $("#host_id").val(),
 
             // commvault接口
             interface_type: $("#interface_type").val(),
@@ -576,7 +564,7 @@ $('#scriptsave').click(function () {
             alert("请保存当前步骤后，再添加关联脚本。");
         }
     });
-})
+});
 
 
 // 确认项

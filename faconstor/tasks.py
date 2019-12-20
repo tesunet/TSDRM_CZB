@@ -44,12 +44,12 @@ def handle_func(jobid, steprunid):
         try:
             cur.execute(
                 """SELECT *  FROM [commserv].[dbo].[RunningBackups] where jobid={0}"""
-                .format(jobid))
+                    .format(jobid))
             backup_task_list = cur.fetchall()
 
             cur.execute(
                 """SELECT *  FROM [commserv].[dbo].[RunningRestores] where jobid={0}"""
-                .format(jobid))
+                    .format(jobid))
             restore_task_list = cur.fetchall()
         except:
             print("任务不存在!")  # 1.修改当前步骤状态为DONE
@@ -207,6 +207,23 @@ def force_exec_script(processrunid):
         except ProcessRun.DoesNotExist as e:
             print("流程不存在, ", e)
         else:
+            # 备机服务器账户信息
+            config = etree.XML(processrun.config)
+
+            std_param_els = config.xpath('//std_param_list/param')
+
+            ip, username, password, system_tag = "", "", "", ""
+            for std_param_el in std_param_els:
+                param_name = std_param_el.attrib.get("param_name", "")
+                if param_name == 'std_host_ip':
+                    ip = std_param_el.attrib.get('std_host_ip', "")
+                if param_name == 'std_host_username':
+                    username = std_param_el.attrib.get('std_host_username', "")
+                if param_name == 'std_host_passwd':
+                    password = std_param_el.attrib.get('std_host_passwd', "")
+                if param_name == 'std_host_system':
+                    system_tag = std_param_el.attrib.get('std_host_system', "")
+
             all_step_runs = processrun.steprun_set.exclude(
                 step__state="9").filter(step__force_exec=1)
             for steprun in all_step_runs:
@@ -217,12 +234,12 @@ def force_exec_script(processrunid):
                     script.state = "RUN"
                     script.save()
 
-                    # HostsManage
-                    cur_host_manage = script.script.hosts_manage
-                    ip = cur_host_manage.host_ip
-                    username = cur_host_manage.username
-                    password = cur_host_manage.password
-                    system_tag = cur_host_manage.os
+                    # # HostsManage
+                    # cur_host_manage = script.script.hosts_manage
+                    # ip = cur_host_manage.host_ip
+                    # username = cur_host_manage.username
+                    # password = cur_host_manage.password
+                    # system_tag = cur_host_manage.os
 
                     if system_tag in ["Linux", "AIX"]:
                         ############################
@@ -282,7 +299,7 @@ def force_exec_script(processrunid):
                         mkdir_cmd = "if not exist {windows_temp_script_path} mkdir {windows_temp_script_path}".format(
                             **{
                                 "windows_temp_script_path":
-                                windows_temp_script_path
+                                    windows_temp_script_path
                             })
                         mkdir_obj = remote.ServerByPara(
                             mkdir_cmd, ip, username, password, system_tag)
@@ -371,6 +388,24 @@ def runstep(steprun, if_repeat=False):
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
+
+    # 备机服务器账户信息
+    config = etree.XML(processrun.config)
+
+    std_param_els = config.xpath('//std_param_list/param')
+
+    ip, username, password, system_tag = "", "", "", ""
+    for std_param_el in std_param_els:
+        param_name = std_param_el.attrib.get("param_name", "")
+        if param_name == 'std_host_ip':
+            ip = std_param_el.attrib.get('std_host_ip', "")
+        if param_name == 'std_host_username':
+            username = std_param_el.attrib.get('std_host_username', "")
+        if param_name == 'std_host_passwd':
+            password = std_param_el.attrib.get('std_host_passwd', "")
+        if param_name == 'std_host_system':
+            system_tag = std_param_el.attrib.get('std_host_system', "")
+
     if processrun.state == "RUN" or processrun.state == "ERROR":
         # 将错误流程改成RUN
         processrun.state = "RUN"
@@ -386,13 +421,11 @@ def runstep(steprun, if_repeat=False):
                 task.save()
 
             if not if_repeat:
-                steprun.starttime = datetime.datetime.now(
-                )  # 这个位置pnode的starttime存多次
+                steprun.starttime = datetime.datetime.now()  # 这个位置pnode的starttime存多次
             steprun.state = "RUN"
             steprun.save()
 
-            children = steprun.step.children.order_by("sort").exclude(
-                state="9")
+            children = steprun.step.children.order_by("sort").exclude(state="9")
             if len(children) > 0:
                 for child in children:
                     childsteprun = child.steprun_set.exclude(state="9").filter(
@@ -409,8 +442,7 @@ def runstep(steprun, if_repeat=False):
                             return 0
                         if childreturn == 2:
                             return 2
-            scriptruns = steprun.scriptrun_set.exclude(
-                Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
+            scriptruns = steprun.scriptrun_set.exclude(Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
             for script in scriptruns:
                 # 目的：不在服务器存放脚本；
                 #   Linux：通过ssh上传文件至服务器端；执行脚本；删除脚本；
@@ -423,12 +455,12 @@ def runstep(steprun, if_repeat=False):
                 script_name = script.script.name if script.script.name else ""
 
                 if script.script.interface_type == "脚本":
-                    # HostsManage
-                    cur_host_manage = script.script.hosts_manage
-                    ip = cur_host_manage.host_ip
-                    username = cur_host_manage.username
-                    password = cur_host_manage.password
-                    system_tag = cur_host_manage.os
+                    # # HostsManage
+                    # cur_host_manage = script.script.hosts_manage
+                    # ip = cur_host_manage.host_ip
+                    # username = cur_host_manage.username
+                    # password = cur_host_manage.password
+                    # system_tag = cur_host_manage.os
 
                     if system_tag in ["Linux", "AIX"]:
                         ############################
@@ -468,20 +500,18 @@ def runstep(steprun, if_repeat=False):
                             myprocesstask.save()
                             return 0
 
-                        linux_temp_script_name = "tmp_script_{scriptrun_id}.sh".format(
-                            **{"scriptrun_id": script.id})
+                        linux_temp_script_name = "tmp_script_{scriptrun_id}.sh".format(**{"scriptrun_id": script.id})
                         linux_temp_script_file = linux_temp_script_path + "/" + linux_temp_script_name
 
                         tmp_cmd = r"cat > {0} << \EOH".format(
-                            linux_temp_script_file
-                        ) + "\n" + script.script.script_text + "\nEOH"
+                            linux_temp_script_file) + "\n" + script.script.script_text + "\nEOH"
 
                         # Linux上传脚本时，修改cmd
                         tmp_cmd = format_cmd(tmp_cmd, processrun)
 
                         if not tmp_cmd:
-                            script.runlog = "脚本" + script_name+ "参数传入失败，请处理检测是否遗漏或者拼写错误。"
-                            script.explain = "脚本" + script_name+ "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                            script.runlog = "脚本" + script_name + "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                            script.explain = "脚本" + script_name + "参数传入失败，请处理检测是否遗漏或者拼写错误。"
                             print("当前脚本执行失败,结束任务!")
                             script.state = "ERROR"
                             script.save()
@@ -490,26 +520,23 @@ def runstep(steprun, if_repeat=False):
 
                             myprocesstask = ProcessTask()
                             myprocesstask.processrun = steprun.processrun
-                            myprocesstask.starttime = datetime.datetime.now(
-                            )
+                            myprocesstask.starttime = datetime.datetime.now()
                             myprocesstask.senduser = steprun.processrun.creatuser
                             myprocesstask.receiveauth = steprun.step.group
                             myprocesstask.type = "ERROR"
                             myprocesstask.logtype = "SCRIPT"
                             myprocesstask.state = "0"
-                            myprocesstask.content = "脚本" + script_name+ "参数传入失败，请处理检测是否遗漏或者拼写错误。"
+                            myprocesstask.content = "脚本" + script_name + "参数传入失败，请处理检测是否遗漏或者拼写错误。"
                             myprocesstask.steprun_id = steprun.id
                             myprocesstask.save()
                             return 0
-                            
-                        tmp_obj = remote.ServerByPara(tmp_cmd, ip, username,
-                                                      password, system_tag)
+
+                        tmp_obj = remote.ServerByPara(tmp_cmd, ip, username, password, system_tag)
                         tmp_result = tmp_obj.run("")
 
                         if tmp_result["exec_tag"] == 1:
                             script.runlog = "上传Linux脚本文件失败。"  # 写入错误类型
-                            script.explain = "上传Linux脚本文件失败：{0}。".format(
-                                tmp_result["data"])
+                            script.explain = "上传Linux脚本文件失败：{0}。".format(tmp_result["data"])
                             script.state = "ERROR"
                             script.save()
                             steprun.state = "ERROR"
@@ -528,23 +555,20 @@ def runstep(steprun, if_repeat=False):
                             myprocesstask.save()
                             return 0
 
-                        exe_cmd = "chmod 777 {0}&&{0}".format(
-                            linux_temp_script_file)
+                        exe_cmd = "chmod 777 {0}&&{0}".format(linux_temp_script_file)
                     else:
                         ############################
                         # 创建windows下目录:       #
                         #   先判断文件是否存在，再  #
                         #   mkdir/md path 创建文件 #
                         ############################
-                        windows_temp_script_path = r"C:\drm\{processrunid}".format(
-                            **{"processrunid": processrun.id})
+                        windows_temp_script_path = r"C:\drm\{processrunid}".format(**{"processrunid": processrun.id})
                         mkdir_cmd = "if not exist {windows_temp_script_path} mkdir {windows_temp_script_path}".format(
                             **{
                                 "windows_temp_script_path":
-                                windows_temp_script_path
+                                    windows_temp_script_path
                             })
-                        mkdir_obj = remote.ServerByPara(
-                            mkdir_cmd, ip, username, password, system_tag)
+                        mkdir_obj = remote.ServerByPara(mkdir_cmd, ip, username, password, system_tag)
                         mkdir_result = mkdir_obj.run("")
 
                         # Windows系统创建文件夹失败
@@ -610,8 +634,7 @@ def runstep(steprun, if_repeat=False):
                                 myprocesstask.save()
                                 return 0
 
-                            tmp_obj = remote.ServerByPara(
-                                tmp_cmd, ip, username, password, system_tag)
+                            tmp_obj = remote.ServerByPara(tmp_cmd, ip, username, password, system_tag)
                             tmp_result = tmp_obj.run("")
 
                             if tmp_result["exec_tag"] == 1:
@@ -640,8 +663,7 @@ def runstep(steprun, if_repeat=False):
                         exe_cmd = windows_temp_script_file
 
                     # 执行文件
-                    rm_obj = remote.ServerByPara(exe_cmd, ip, username,
-                                                 password, system_tag)
+                    rm_obj = remote.ServerByPara(exe_cmd, ip, username, password, system_tag)
                     result = rm_obj.run(script.script.succeedtext)
                     script.endtime = datetime.datetime.now()
                     script.result = result['exec_tag']
@@ -672,10 +694,8 @@ def runstep(steprun, if_repeat=False):
 
                 else:
                     result = {}
-                    commvault_api_path = os.path.join(
-                        os.path.join(settings.BASE_DIR,
-                                     "faconstor"), "commvault_api"
-                    ) + os.sep + script.script.commv_interface
+                    commvault_api_path = os.path.join(os.path.join(settings.BASE_DIR, "faconstor"),
+                                                      "commvault_api") + os.sep + script.script.commv_interface
                     ret = ""
 
                     origin = script.script.origin.client_name if script.script.origin else ""
@@ -691,15 +711,13 @@ def runstep(steprun, if_repeat=False):
                     if oracle_info:
                         instance = oracle_info["instance"]
 
-                    oracle_param = "%s %s %s %d" % (origin, target, instance,
-                                                    processrun.id)
+                    oracle_param = "%s %s %s %d" % (origin, target, instance, processrun.id)
                     # # 测试定时任务
                     # result["exec_tag"] = 0
                     # result["data"] = "调用commvault接口成功。"
                     # result["log"] = "调用commvault接口成功。"
                     try:
-                        ret = subprocess.getstatusoutput(commvault_api_path +
-                                                         " %s" % oracle_param)
+                        ret = subprocess.getstatusoutput(commvault_api_path + " %s" % oracle_param)
                         exec_status, recover_job_id = ret
                     except Exception as e:
                         result["exec_tag"] = 1
@@ -787,7 +805,6 @@ def runstep(steprun, if_repeat=False):
                 script.endtime = datetime.datetime.now()
                 script.state = "DONE"
                 script.save()
-
 
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = steprun.processrun
@@ -997,13 +1014,13 @@ def create_process_run(*args, **kwargs):
 
                 if database == "db2":
                     # 生成配置文件
-                    set_rec_config_cmd = """su - {backup_profile} -c 'cd /home/{backup_profile}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 redirect generate script {db_name}.txt'
+                    set_rec_config_cmd = """sh -c 'cd /home/{backup_profile}&&db2 restore db {db_name} load {dest_path}nbdb2.so64 redirect generate script {db_name}.txt'
                     """.format(backup_profile=backup_profile,
-                                db_name=db_name,
-                                dest_path=dest_path)
+                               db_name=db_name,
+                               dest_path=dest_path)
                     server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd),
-                                            backup_ip, backup_username,
-                                            backup_passwd, system)
+                                              backup_ip, backup_username,
+                                              backup_passwd, system)
                     set_rec_config_result = server_obj.run("")
 
                     if set_rec_config_result["exec_tag"] == 1:
@@ -1075,7 +1092,6 @@ def create_process_run(*args, **kwargs):
                     exec_process.delay(myprocessrun.id)
 
 
-
 def format_cmd(cmd, processrun):
     # processrun.config
     pr_config = ""
@@ -1112,9 +1128,9 @@ def format_cmd(cmd, processrun):
             param_value = p_v.attrib.get('param_value', '')
             if vp == variable_name:
                 if final_cmd:
-                    final_cmd = final_cmd.replace("[[%s]]"% vp, param_value)
+                    final_cmd = final_cmd.replace("[[%s]]" % vp, param_value)
                 else:
-                    final_cmd = cmd.replace("[[%s]]"% vp, param_value)
+                    final_cmd = cmd.replace("[[%s]]" % vp, param_value)
 
     for fp in fixed_params:
         # processrun中固定参数
@@ -1125,7 +1141,7 @@ def format_cmd(cmd, processrun):
                 if final_cmd:
                     final_cmd = final_cmd.replace("{{%s}}" % fp, param_value)
                 else:
-                    final_cmd = cmd.replace("{{%s}}"% fp, param_value)
+                    final_cmd = cmd.replace("{{%s}}" % fp, param_value)
     # 检测参数是否全部替换
     variable_param_rest = variable_param_com.findall(final_cmd)
     fixed_param_rest = fixed_param_com.findall(final_cmd)

@@ -1286,6 +1286,7 @@ def get_process_run_facts(request):
                         client_name = script.origin.client_name
                         break
 
+
             cv_oracle_process_list.append({
                 "process_name": cur_process.name,
                 "process_run_today": process_run_today,
@@ -1317,7 +1318,8 @@ def get_process_rto(request):
                     current_rto_list.append(current_rto)
                 process_dict = {
                     "process_name": process_name,
-                    "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[-50:][::-1],
+                    "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[
+                                                                                                   -50:][::-1],
                     "color": process.color
                 }
                 process_rto_list.append(process_dict)
@@ -2347,73 +2349,73 @@ def groupsavefuntree(request):
 def script(request, funid):
     if request.user.is_authenticated():
         errors = []
-        if request.method == 'POST':
-            my_file = request.FILES.get("myfile", None)  # 获取上传的文件，如果没有文件，则默认为None
-            if not my_file:
-                errors.append("请选择要导入的文件。")
-            else:
-                filetype = my_file.name.split(".")[-1]
-                if filetype == "xls" or filetype == "xlsx":
-                    myfilepath = os.path.join(os.path.join(os.path.dirname(__file__), "upload\\temp"), my_file.name)
-                    destination = open(myfilepath, 'wb+')
-                    for chunk in my_file.chunks():  # 分块写入文件
-                        destination.write(chunk)
-                    destination.close()
-
-                    data = xlrd.open_workbook(myfilepath)
-                    sheet = data.sheets()[0]
-                    rows = sheet.nrows
-
-                    succeed_tag = True
-                    for i in range(rows):
-                        if i > 0:
-                            allscript = Script.objects.filter(code=sheet.cell(i, 0).value).exclude(
-                                state="9").filter(step_id=None)
-                            if (len(allscript) > 0):
-                                errors.append(sheet.cell(i, 0).value + ":已存在。")
-                                succeed_tag = False
-                            else:
-                                try:
-                                    # add hosts
-                                    check_host_manage = HostsManage.objects.filter(
-                                        host_ip=sheet.cell(i, 2).value).exclude(state="9")
-                                    if check_host_manage.exists():
-                                        cur_host = check_host_manage[0]
-                                    else:
-                                        # add host
-                                        cur_host_manage = HostsManage()
-                                        cur_host_manage.host_ip = sheet.cell(i, 2).value
-                                        cur_host_manage.type = sheet.cell(i, 3).value
-                                        cur_host_manage.username = sheet.cell(i, 4).value
-                                        cur_host_manage.password = sheet.cell(i, 5).value
-                                        host_os = ""
-                                        if sheet.cell(i, 3).value == "SSH":
-                                            host_os = "Linux"
-                                        if sheet.cell(i, 3).value == "BAT":
-                                            host_os = "Windows"
-                                        cur_host_manage.os = host_os
-                                        cur_host_manage.save()
-                                        cur_host = cur_host_manage
-
-                                    scriptsave = Script()
-                                    scriptsave.code = sheet.cell(i, 0).value
-                                    scriptsave.name = sheet.cell(i, 1).value
-                                    scriptsave.hosts_manage = cur_host
-                                    scriptsave.succeedtext = sheet.cell(i, 6).value
-                                    scriptsave.script_text = sheet.cell(i, 7).value
-                                    scriptsave.save()
-                                except Exception as e:
-                                    succeed_tag = False
-                                    print(e)
-                                    errors.append("脚本上传失败，请检查文件内容。")
-                                    break
-
-                    if succeed_tag:
-                        errors = ["导入成功。"]
-
-                    os.remove(myfilepath)
-                else:
-                    errors.append("只能上传xls和xlsx文件，请选择正确的文件类型。")
+        # if request.method == 'POST':
+        #     my_file = request.FILES.get("myfile", None)  # 获取上传的文件，如果没有文件，则默认为None
+        #     if not my_file:
+        #         errors.append("请选择要导入的文件。")
+        #     else:
+        #         filetype = my_file.name.split(".")[-1]
+        #         if filetype == "xls" or filetype == "xlsx":
+        #             myfilepath = os.path.join(os.path.join(os.path.dirname(__file__), "upload\\temp"), my_file.name)
+        #             destination = open(myfilepath, 'wb+')
+        #             for chunk in my_file.chunks():  # 分块写入文件
+        #                 destination.write(chunk)
+        #             destination.close()
+        #
+        #             data = xlrd.open_workbook(myfilepath)
+        #             sheet = data.sheets()[0]
+        #             rows = sheet.nrows
+        #
+        #             succeed_tag = True
+        #             for i in range(rows):
+        #                 if i > 0:
+        #                     allscript = Script.objects.filter(code=sheet.cell(i, 0).value).exclude(
+        #                         state="9").filter(step_id=None)
+        #                     if (len(allscript) > 0):
+        #                         errors.append(sheet.cell(i, 0).value + ":已存在。")
+        #                         succeed_tag = False
+        #                     else:
+        #                         try:
+        #                             # add hosts
+        #                             check_host_manage = HostsManage.objects.filter(
+        #                                 host_ip=sheet.cell(i, 2).value).exclude(state="9")
+        #                             if check_host_manage.exists():
+        #                                 cur_host = check_host_manage[0]
+        #                             else:
+        #                                 # add host
+        #                                 cur_host_manage = HostsManage()
+        #                                 cur_host_manage.host_ip = sheet.cell(i, 2).value
+        #                                 cur_host_manage.type = sheet.cell(i, 3).value
+        #                                 cur_host_manage.username = sheet.cell(i, 4).value
+        #                                 cur_host_manage.password = sheet.cell(i, 5).value
+        #                                 host_os = ""
+        #                                 if sheet.cell(i, 3).value == "SSH":
+        #                                     host_os = "Linux"
+        #                                 if sheet.cell(i, 3).value == "BAT":
+        #                                     host_os = "Windows"
+        #                                 cur_host_manage.os = host_os
+        #                                 cur_host_manage.save()
+        #                                 cur_host = cur_host_manage
+        #
+        #                             scriptsave = Script()
+        #                             scriptsave.code = sheet.cell(i, 0).value
+        #                             scriptsave.name = sheet.cell(i, 1).value
+        #                             scriptsave.hosts_manage = cur_host
+        #                             scriptsave.succeedtext = sheet.cell(i, 6).value
+        #                             scriptsave.script_text = sheet.cell(i, 7).value
+        #                             scriptsave.save()
+        #                         except Exception as e:
+        #                             succeed_tag = False
+        #                             print(e)
+        #                             errors.append("脚本上传失败，请检查文件内容。")
+        #                             break
+        #
+        #             if succeed_tag:
+        #                 errors = ["导入成功。"]
+        #
+        #             os.remove(myfilepath)
+        #         else:
+        #             errors.append("只能上传xls和xlsx文件，请选择正确的文件类型。")
 
         # 主机选项
         all_hosts_manage = HostsManage.objects.exclude(state="9")
@@ -2437,7 +2439,7 @@ def script(request, funid):
 def scriptdata(request):
     if request.user.is_authenticated():
         result = []
-        allscript = Script.objects.exclude(state="9").filter(step_id=None).select_related("origin", "hosts_manage")
+        allscript = Script.objects.exclude(state="9").filter(step_id=None).select_related("origin")
         if (len(allscript) > 0):
             for script in allscript:
                 # modify
@@ -2448,8 +2450,6 @@ def scriptdata(request):
                             "id": script.id,
                             "code": script.code,
                             "name": script.name,
-                            "ip": "",
-                            "host_id": "",
                             "script_text": "",
                             "success_text": "",
                             "log_address": "",
@@ -2459,25 +2459,18 @@ def scriptdata(request):
                             "origin": cur_origin.id
                         })
                 else:
-                    cur_host = script.hosts_manage
-                    if cur_host:
-                        host_id = cur_host.id
-                        ip = cur_host.host_ip
+                    result.append({
+                        "id": script.id,
+                        "code": script.code,
+                        "name": script.name,
+                        "script_text": script.script_text,
+                        "success_text": script.succeedtext,
+                        "log_address": script.log_address,
 
-                        result.append({
-                            "id": script.id,
-                            "code": script.code,
-                            "name": script.name,
-                            "ip": ip,
-                            "host_id": host_id,
-                            "script_text": script.script_text,
-                            "success_text": script.succeedtext,
-                            "log_address": script.log_address,
-
-                            "interface_type": script.interface_type,
-                            "commv_interface": "",
-                            "origin": "",
-                        })
+                        "interface_type": script.interface_type,
+                        "commv_interface": "",
+                        "origin": "",
+                    })
 
         return HttpResponse(json.dumps({"data": result}))
 
@@ -2531,7 +2524,7 @@ def scriptsave(request):
             commv_interface = request.POST.get('commv_interface', '')
 
             # 定义存储的方法
-            def script_save(save_data, cur_host_manage=None):
+            def script_save(save_data):
                 result = {}
 
                 if save_data["id"] == 0:
@@ -2545,7 +2538,6 @@ def scriptsave(request):
 
                         # 判断是否commvault/脚本
                         if save_data["interface_type"] == "commvault":
-                            scriptsave.hosts_manage_id = None
                             scriptsave.script_text = ""
                             scriptsave.succeedtext = ""
                             scriptsave.log_address = ""
@@ -2553,7 +2545,6 @@ def scriptsave(request):
                             scriptsave.origin_id = save_data["origin"]
                             scriptsave.commv_interface = save_data["commv_interface"]
                         else:
-                            scriptsave.hosts_manage_id = cur_host_manage.id
                             scriptsave.script_text = save_data["script_text"]
                             scriptsave.succeedtext = save_data["success_text"]
                             scriptsave.log_address = save_data["log_address"]
@@ -2584,7 +2575,6 @@ def scriptsave(request):
 
                                 # 判断是否commvault/脚本
                                 if save_data["interface_type"] == "commvault":
-                                    scriptsave.hosts_manage_id = None
                                     scriptsave.script_text = ""
                                     scriptsave.succeedtext = ""
                                     scriptsave.log_address = ""
@@ -2592,7 +2582,6 @@ def scriptsave(request):
                                     scriptsave.origin_id = save_data["origin"]
                                     scriptsave.commv_interface = save_data["commv_interface"]
                                 else:
-                                    scriptsave.hosts_manage_id = cur_host_manage.id
                                     scriptsave.script_text = save_data["script_text"]
                                     scriptsave.succeedtext = save_data["success_text"]
                                     scriptsave.log_address = save_data["log_address"]
@@ -2632,7 +2621,6 @@ def scriptsave(request):
                                 "script_text": script_text,
                                 "success_text": success_text,
                                 "log_address": log_address,
-                                "host_id": host_id,
                                 "interface_type": interface_type,
                                 "origin": origin,
                                 "commv_interface": commv_interface
@@ -2645,27 +2633,10 @@ def scriptsave(request):
                                     if commv_interface.strip() == "":
                                         result["res"] = 'commvault接口未选择。'
                                     else:
-                                        result = script_save(save_data, cur_host_manage=None)
+                                        result = script_save(save_data)
                             else:
-                                try:
-                                    host_id = int(host_id)
-                                except ValueError as e:
-                                    print("host_id:%s" % e)
-                                    result["res"] = '网络连接异常。'
-                                else:
-                                    if not host_id:
-                                        result["res"] = '脚本存放的主机未选择。'
-                                    else:
-                                        if script_text.strip() == '':
-                                            result["res"] = '脚本内容不能为空。'
-                                        else:
-                                            try:
-                                                cur_host_manage = HostsManage.objects.get(id=host_id)
-                                            except HostsManage.DoesNotExist as e:
-                                                print(e)
-                                                result["res"] = '所选主机不存在。'
-                                            else:
-                                                result = script_save(save_data, cur_host_manage=cur_host_manage)
+
+                                result = script_save(save_data)
 
             return HttpResponse(json.dumps(result))
 
@@ -2742,7 +2713,7 @@ def processscriptsave(request):
             script_sort = request.POST.get('script_sort', '')
 
             # 定义存储的方法
-            def process_script_save(save_data, cur_host_manage=None):
+            def process_script_save(save_data):
                 result = {}
 
                 if save_data["id"] == 0:
@@ -2760,7 +2731,6 @@ def processscriptsave(request):
 
                             # 判断是否commvault/脚本
                             if save_data["interface_type"] == "commvault":
-                                scriptsave.hosts_manage_id = None
                                 scriptsave.script_text = ""
                                 scriptsave.succeedtext = ""
                                 scriptsave.log_address = ""
@@ -2768,7 +2738,6 @@ def processscriptsave(request):
                                 scriptsave.origin_id = save_data["origin"]
                                 scriptsave.commv_interface = save_data["commv_interface"]
                             else:
-                                scriptsave.hosts_manage_id = cur_host_manage.id
                                 scriptsave.script_text = save_data["script_text"]
                                 scriptsave.succeedtext = save_data["success_text"]
                                 scriptsave.log_address = save_data["log_address"]
@@ -2814,7 +2783,6 @@ def processscriptsave(request):
 
                                 # 判断是否commvault/脚本
                                 if save_data["interface_type"] == "commvault":
-                                    scriptsave.hosts_manage_id = None
                                     scriptsave.script_text = ""
                                     scriptsave.succeedtext = ""
                                     scriptsave.log_address = ""
@@ -2822,7 +2790,6 @@ def processscriptsave(request):
                                     scriptsave.origin_id = save_data["origin"]
                                     scriptsave.commv_interface = save_data["commv_interface"]
                                 else:
-                                    scriptsave.hosts_manage_id = cur_host_manage.id
                                     scriptsave.script_text = save_data["script_text"]
                                     scriptsave.succeedtext = save_data["success_text"]
                                     scriptsave.log_address = save_data["log_address"]
@@ -2899,28 +2866,9 @@ def processscriptsave(request):
                                         if commv_interface.strip() == "":
                                             result["res"] = 'commvault接口未选择。'
                                         else:
-                                            result = process_script_save(save_data, cur_host_manage=None)
+                                            result = process_script_save(save_data)
                                 else:
-                                    try:
-                                        host_id = int(host_id)
-                                    except ValueError as e:
-                                        print("host_id:%s" % e)
-                                        result["res"] = '网络连接异常。'
-                                    else:
-                                        if not host_id:
-                                            result["res"] = '脚本存放的主机未选择。'
-                                        else:
-                                            if script_text.strip() == '':
-                                                result["res"] = '脚本内容不能为空。'
-                                            else:
-                                                try:
-                                                    cur_host_manage = HostsManage.objects.get(id=host_id)
-                                                except HostsManage.DoesNotExist as e:
-                                                    print(e)
-                                                    result["res"] = '所选主机不存在。'
-                                                else:
-                                                    result = process_script_save(save_data,
-                                                                                 cur_host_manage=cur_host_manage)
+                                    result = process_script_save(save_data)
 
             return HttpResponse(json.dumps(result))
 
@@ -3006,13 +2954,10 @@ def get_script_data(request):
             if (len(allscript) > 0):
                 cur_script = allscript[0]
 
-                cur_host_manage = cur_script.hosts_manage
-
                 script_data = {
                     "id": cur_script.id,
                     "code": cur_script.code,
                     "name": cur_script.name,
-                    "host_id": cur_host_manage.id if cur_host_manage else "",
                     "script_text": cur_script.script_text,
                     "success_text": cur_script.succeedtext,
                     "log_address": cur_script.log_address,
@@ -3337,8 +3282,8 @@ def processconfig(request, funid):
 
         return render(request, 'processconfig.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                       "processlist": processlist, "process_id": process_id, "all_hosts_manage": all_hosts_manage,
-                       "all_origins": all_origins, "commv_file_list": commv_file_list})
+                       "processlist": processlist, "process_id": process_id, "all_origins": all_origins,
+                       "commv_file_list": commv_file_list})
 
 
 def del_step(request):
@@ -3856,7 +3801,7 @@ def oracle_restore(request, process_id):
                 "host_id": host.id,
                 "host_name": host.host_name,
                 "host_config_list": host_config_list,
-                "host_type_tag": host.host_type%2 if host.host_type else "",
+                "host_type_tag": host.host_type % 2 if host.host_type else "",
                 "host_type_display": host.get_host_type_display(),
             })
         return render(request, 'oracle_restore.html',
@@ -3983,7 +3928,6 @@ def process_startup(request):
                     f.write(new_config)
             except:
                 return JsonResponse({"res": "配置文件写入本地失败。"})
-
 
             # 源机信息
             try:
@@ -4156,7 +4100,8 @@ def process_startup(request):
                                         myverifyitemsrun.steprun = mysteprun
                                         myverifyitemsrun.save()
 
-                                allgroup = process.step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                                allgroup = process.step_set.exclude(state="9").exclude(
+                                    Q(group="") | Q(group=None)).values(
                                     "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
                                 if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
@@ -4804,14 +4749,26 @@ def get_script_log(request):
         log_info = ""
         if current_script_run:
             current_script_run = current_script_run[0]
+            processrun = current_script_run.steprun.processrun
+
             log_address = current_script_run.script.log_address
 
-            # HostsManage
-            cur_host_manage = current_script_run.script.hosts_manage
-            remote_ip = cur_host_manage.host_ip
-            remote_user = cur_host_manage.username
-            remote_password = cur_host_manage.password
-            script_os = cur_host_manage.os
+            # 备机服务器账户信息
+            config = etree.XML(processrun.config)
+
+            std_param_els = config.xpath('//std_param_list/param')
+
+            remote_ip, remote_user, remote_password, script_os = "", "", "", ""
+            for std_param_el in std_param_els:
+                param_name = std_param_el.attrib.get("param_name", "")
+                if param_name == 'std_host_ip':
+                    remote_ip = std_param_el.attrib.get('std_host_ip', "")
+                if param_name == 'std_host_username':
+                    remote_user = std_param_el.attrib.get('std_host_username', "")
+                if param_name == 'std_host_passwd':
+                    remote_password = std_param_el.attrib.get('std_host_passwd', "")
+                if param_name == 'std_host_system':
+                    script_os = std_param_el.attrib.get('std_host_system', "")
 
             if script_os == "Linux":
                 remote_cmd = "cat {0}".format(log_address)
@@ -4991,7 +4948,7 @@ def get_current_scriptinfo(request):
                                                                                         "steprun__processrun")
         script_id = scriptrun_objs[0].script_id if scriptrun_objs else None
 
-        script_objs = Script.objects.filter(id=script_id).select_related("hosts_manage", "origin")
+        script_objs = Script.objects.filter(id=script_id).select_related("origin")
         script_obj = script_objs[0] if script_objs else None
 
         if script_obj:
@@ -5018,10 +4975,21 @@ def get_current_scriptinfo(request):
                 if scriptrun_obj.steprun.processrun.target:
                     target = scriptrun_obj.steprun.processrun.target.client_name
 
+            # 备机服务器账户信息
+            config = etree.XML(scriptrun_obj.steprun.processrun.config)
+
+            std_param_els = config.xpath('//std_param_list/param')
+
+            ip = ""
+            for std_param_el in std_param_els:
+                param_name = std_param_el.attrib.get("param_name", "")
+                if param_name == 'std_host_ip':
+                    ip = std_param_el.attrib.get('std_host_ip', "")
+
             script_info = {
                 "processrunstate": scriptrun_obj.steprun.processrun.state,
                 "code": script_obj.code,
-                "ip": script_obj.hosts_manage.host_ip if script_obj.hosts_manage else "",
+                "ip": ip,
                 "filename": script_obj.filename,
                 "scriptpath": script_obj.scriptpath,
                 "state": state_dict["{0}".format(scriptrun_obj.state)],
@@ -7808,7 +7776,7 @@ def load_backupset(request):
         except:
             pass
         else:
-            if all([nbu_install_path, db_name,backupset_edt, pri_host, std_host]):
+            if all([nbu_install_path, db_name, backupset_edt, pri_host, std_host]):
                 std_host_ip = std_host.host_ip
                 std_host_username = std_host.username
                 std_host_passwd = std_host.password
@@ -7871,23 +7839,69 @@ def load_backupset(request):
 def set_rec_config(request):
     if request.user.is_authenticated():
         bcs_time = request.POST.get("bcs_time", "")
-        std_id = request.POST.get("std_id", "")
-
         std_profile = request.POST.get("std_profile", "")
         redirect_file_path = request.POST.get("redirect_file_path", "")
-        db_name = request.POST.get("db_name", "")
         nbu_install_path = request.POST.get("nbu_install_path", "")
         pre_increasement = request.POST.get("pre_increasement", "")
 
+        # 源机参数：db2.conf文件生成所需参数
+        db_name = request.POST.get('db_name', '')
+        storage_policy = request.POST.get('storage_policy', '')
+        client_name = request.POST.get('client_name', '')
+        schedule_policy = request.POST.get('schedule_policy', '')
+        redirect_file_path = request.POST.get('redirect_file_path', '')
+
+        pri_host_id = request.POST.get('pri_host_id', '')
+        std_host_id = request.POST.get('std_host_id', '')
+
         try:
-            std_id = int(std_id)
-            std_host = HostsManage.objects.get(id=std_id)
-        except:
-            return JsonResponse({
-                "ret": 0,
-                "data": "备机不存在。"
-            })
+            std_host_id = int(std_host_id)
+        except ValueError as e:
+            return JsonResponse({"res": "备机未选择。"})
+
+        try:
+            pri_host_id = int(pri_host_id)
+        except ValueError as e:
+            return JsonResponse({"res": "源机未选择。"})
+
+        # 备机信息
+        try:
+            std_host = HostsManage.objects.get(id=std_host_id)
+        except HostsManage.DoesNotExist as e:
+            return JsonResponse({"res": "该备机不存在。"})
         else:
+            # 先生成db2.conf
+            if redirect_file_path.endswith("/"):
+                pass
+            else:
+                redirect_file_path = redirect_file_path + "/"
+
+            std_host_ip = std_host.host_ip
+            std_host_name = std_host.host_name
+            std_host_username = std_host.username
+            std_host_passwd = std_host.password
+            std_host_system = std_host.os
+
+            # 写入db2.conf
+            db2_conf_path = redirect_file_path + 'db2.conf'
+            db2_conf_text = "DATABASE {db_name}".format(db_name=db_name) + "\n" + \
+                            "OBJECTTYPE DATABASE" + "\n" + \
+                            "POLICY {storage_policy}".format(storage_policy=storage_policy) + "\n" + \
+                            "CLIENT_NAME {client_name}".format(client_name=client_name) + "\n" + \
+                            "SCHEDULE {schedule_policy}".format(schedule_policy=schedule_policy) + "\n" + \
+                            "ENDOPER"
+
+            db2_conf_cmd = """sh -c 'echo "{db2_conf_text}" > {db2_conf_path}'""".format(db2_conf_text=db2_conf_text,
+                                                                                         db2_conf_path=db2_conf_path)
+            set_db2_conf = remote.ServerByPara(db2_conf_cmd, std_host_ip, std_host_username, std_host_passwd, std_host_system)
+            set_db2_conf_result = set_db2_conf.run("")
+
+            if set_db2_conf_result['exec_tag'] == 1:
+                return JsonResponse({
+                    "ret": 0,
+                    "data": "db2.conf文件生成失败。{error}".format(error=set_db2_conf_result['data'])
+                })
+
             # 选择之后，传入process_id/备份集时间 >> 生成/读取配置文件
             # 修改重定向路径/预设增量 >> 重新生成配置文件
 
@@ -7898,35 +7912,32 @@ def set_rec_config(request):
             #     dest_path=dest_path,origin_client=origin_client,backupset_stt=backupset_stt,backupset_edt=backupset_edt
             # )
 
-            std_host_ip = std_host.host_ip
-            std_host_username = std_host.username
-            std_host_passwd = std_host.password
-            std_host_system = std_host.os
-
             set_rec_config_cmd = ""
             # 生成配置文件
             if bcs_time:
-                set_rec_config_cmd = """su - {std_profile} -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
-                """.format(std_profile=std_profile, db_name=db_name, nbu_install_path=nbu_install_path, bcs_time=bcs_time,
+                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
+                """.format(std_profile=std_profile, db_name=db_name, nbu_install_path=nbu_install_path,
+                           bcs_time=bcs_time,
                            redirect_file_path=redirect_file_path)
             else:
-                set_rec_config_cmd = """su - {std_profile} -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.so64 redirect generate script {db_name}.txt'
+                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.so64 redirect generate script {db_name}.txt'
                 """.format(std_profile=std_profile, db_name=db_name, nbu_install_path=nbu_install_path,
                            redirect_file_path=redirect_file_path)
 
             print("生成配置文件命令: %s" % set_rec_config_cmd)
-            server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd), std_host_ip, std_host_username, std_host_passwd,
+            server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd), std_host_ip, std_host_username,
+                                      std_host_passwd,
                                       std_host_system)
             set_rec_config_result = server_obj.run("")
 
             if set_rec_config_result["exec_tag"] == 1:
                 return JsonResponse({
                     "ret": 0,
-                    "data": "生成配置文件错误。%s" % set_rec_config_result["data"]
+                    "data": "生成db2.conf文件错误。%s" % set_rec_config_result["data"]
                 })
 
             # 读取配置文件
-            cat_config_cmd = """su - {std_profile} -c 'cd {redirect_file_path}&&cat {db_name}.txt'
+            cat_config_cmd = """sh -c 'cd {redirect_file_path}&&cat {db_name}.txt'
             """.format(std_profile=std_profile, db_name=db_name, redirect_file_path=redirect_file_path)
             print("读取配置文件命令：%s" % cat_config_cmd)
 
@@ -8024,70 +8035,69 @@ def set_rec_config(request):
         return HttpResponseRedirect("/login")
 
 
-def set_db2_conf(request):
-    if request.user.is_authenticated():
-        # 源机参数：db2.conf文件生成所需参数
-        db_name = request.POST.get('db_name', '')
-        storage_policy = request.POST.get('storage_policy', '')
-        client_name = request.POST.get('client_name', '')
-        schedule_policy = request.POST.get('schedule_policy', '')
-        redirect_file_path = request.POST.get('redirect_file_path', '')
-
-        pri_host_id = request.POST.get('pri_host_id', '')
-        std_host_id = request.POST.get('std_host_id', '')
-
-        try:
-            std_host_id = int(std_host_id)
-        except ValueError as e:
-            return JsonResponse({"res": "备机未选择。"})
-
-
-        try:
-            pri_host_id = int(pri_host_id)
-        except ValueError as e:
-            return JsonResponse({"res": "源机未选择。"})
-
-        # 备机信息
-        try:
-            std_host = HostsManage.objects.get(id=std_host_id)
-        except HostsManage.DoesNotExist as e:
-            return JsonResponse({"res": "该备机不存在。"})
-        else:
-            if redirect_file_path.endswith("/"):
-                pass
-            else:
-                redirect_file_path = redirect_file_path + "/"
-
-            std_host_ip = std_host.host_ip
-            std_host_name = std_host.host_name
-            std_host_username = std_host.username
-            std_host_passwd = std_host.password
-            std_host_system = std_host.os
-
-            # 写入db2.conf
-            db2_conf_path = redirect_file_path + 'db2.conf'
-            db2_conf_text = "DATABASE {db_name}".format(db_name=db_name) + "\n" + \
-                            "OBJECTTYPE DATABASE" + "\n" + \
-                            "POLICY {storage_policy}".format(storage_policy=storage_policy) + "\n" + \
-                            "CLIENT_NAME {client_name}".format(client_name=client_name) + "\n" + \
-                            "SCHEDULE {schedule_policy}".format(schedule_policy=schedule_policy) + "\n" + \
-                            "ENDOPER"
-
-            db2_conf_cmd = """sh -c 'echo "{db2_conf_text}" > {db2_conf_path}'""".format(db2_conf_text=db2_conf_text,
-                                                                                         db2_conf_path=db2_conf_path)
-            set_db2_conf = remote.ServerByPara(db2_conf_cmd, std_host_ip, std_host_username, std_host_passwd,
-                                               std_host_system)
-            set_db2_conf_result = set_db2_conf.run("")
-
-            if set_db2_conf_result['exec_tag'] == 1:
-                return JsonResponse({
-                    "ret": 0,
-                    "data": "db2.conf文件生成失败。{error}".format(error=set_db2_conf_result['data'])
-                })
-
-        return JsonResponse({
-            "ret": 1,
-            "data": "写入配置成功。"
-        })
-    else:
-        return HttpResponseRedirect("/login")
+# def set_db2_conf(request):
+#     if request.user.is_authenticated():
+#         # 源机参数：db2.conf文件生成所需参数
+#         db_name = request.POST.get('db_name', '')
+#         storage_policy = request.POST.get('storage_policy', '')
+#         client_name = request.POST.get('client_name', '')
+#         schedule_policy = request.POST.get('schedule_policy', '')
+#         redirect_file_path = request.POST.get('redirect_file_path', '')
+#
+#         pri_host_id = request.POST.get('pri_host_id', '')
+#         std_host_id = request.POST.get('std_host_id', '')
+#
+#         try:
+#             std_host_id = int(std_host_id)
+#         except ValueError as e:
+#             return JsonResponse({"res": "备机未选择。"})
+#
+#         try:
+#             pri_host_id = int(pri_host_id)
+#         except ValueError as e:
+#             return JsonResponse({"res": "源机未选择。"})
+#
+#         # 备机信息
+#         try:
+#             std_host = HostsManage.objects.get(id=std_host_id)
+#         except HostsManage.DoesNotExist as e:
+#             return JsonResponse({"res": "该备机不存在。"})
+#         else:
+#             if redirect_file_path.endswith("/"):
+#                 pass
+#             else:
+#                 redirect_file_path = redirect_file_path + "/"
+#
+#             std_host_ip = std_host.host_ip
+#             std_host_name = std_host.host_name
+#             std_host_username = std_host.username
+#             std_host_passwd = std_host.password
+#             std_host_system = std_host.os
+#
+#             # 写入db2.conf
+#             db2_conf_path = redirect_file_path + 'db2.conf'
+#             db2_conf_text = "DATABASE {db_name}".format(db_name=db_name) + "\n" + \
+#                             "OBJECTTYPE DATABASE" + "\n" + \
+#                             "POLICY {storage_policy}".format(storage_policy=storage_policy) + "\n" + \
+#                             "CLIENT_NAME {client_name}".format(client_name=client_name) + "\n" + \
+#                             "SCHEDULE {schedule_policy}".format(schedule_policy=schedule_policy) + "\n" + \
+#                             "ENDOPER"
+#
+#             db2_conf_cmd = """sh -c 'echo "{db2_conf_text}" > {db2_conf_path}'""".format(db2_conf_text=db2_conf_text,
+#                                                                                          db2_conf_path=db2_conf_path)
+#             set_db2_conf = remote.ServerByPara(db2_conf_cmd, std_host_ip, std_host_username, std_host_passwd,
+#                                                std_host_system)
+#             set_db2_conf_result = set_db2_conf.run("")
+#
+#             if set_db2_conf_result['exec_tag'] == 1:
+#                 return JsonResponse({
+#                     "ret": 0,
+#                     "data": "db2.conf文件生成失败。{error}".format(error=set_db2_conf_result['data'])
+#                 })
+#
+#         return JsonResponse({
+#             "ret": 1,
+#             "data": "写入配置成功。"
+#         })
+#     else:
+#         return HttpResponseRedirect("/login")

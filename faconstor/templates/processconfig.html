@@ -221,17 +221,17 @@
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
-                            <div class="form-group" id="host_id_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择主机</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="host_id" name="host_id" hidden>
-                                        {% for host in all_hosts_manage %}
-                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
+{#                            <div class="form-group" id="host_id_div" hidden>#}
+{#                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择主机</label>#}
+{#                                <div class="col-md-10">#}
+{#                                    <select class="form-control" id="host_id" name="host_id" hidden>#}
+{#                                        {% for host in all_hosts_manage %}#}
+{#                                            <option value="{{ host.id }}">{{ host.host_name }}</option>#}
+{#                                        {% endfor %}#}
+{#                                    </select>#}
+{#                                    <div class="form-control-focus"></div>#}
+{#                                </div>#}
+{#                            </div>#}
                             <div class="form-group" id="origin_div" hidden>
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
                                 <div class="col-md-10">
