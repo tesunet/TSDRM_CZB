@@ -4760,15 +4760,15 @@ def get_script_log(request):
 
             remote_ip, remote_user, remote_password, script_os = "", "", "", ""
             for std_param_el in std_param_els:
-                param_name = std_param_el.attrib.get("param_name", "")
-                if param_name == 'std_host_ip':
-                    remote_ip = std_param_el.attrib.get('std_host_ip', "")
-                if param_name == 'std_host_username':
-                    remote_user = std_param_el.attrib.get('std_host_username', "")
-                if param_name == 'std_host_passwd':
-                    remote_password = std_param_el.attrib.get('std_host_passwd', "")
-                if param_name == 'std_host_system':
-                    script_os = std_param_el.attrib.get('std_host_system', "")
+                variable_name = std_param_el.attrib.get("variable_name", "")
+                if variable_name == 'std_host_ip':
+                    remote_ip = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_username':
+                    remote_user = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_passwd':
+                    remote_password = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_system':
+                    script_os = std_param_el.attrib.get('param_value', "")
 
             if script_os == "Linux":
                 remote_cmd = "cat {0}".format(log_address)
@@ -4982,9 +4982,9 @@ def get_current_scriptinfo(request):
 
             ip = ""
             for std_param_el in std_param_els:
-                param_name = std_param_el.attrib.get("param_name", "")
-                if param_name == 'std_host_ip':
-                    ip = std_param_el.attrib.get('std_host_ip', "")
+                variable_name = std_param_el.attrib.get("variable_name", "")
+                if variable_name == 'std_host_ip':
+                    ip = std_param_el.attrib.get('param_value', "")
 
             script_info = {
                 "processrunstate": scriptrun_obj.steprun.processrun.state,

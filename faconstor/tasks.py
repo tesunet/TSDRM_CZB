@@ -214,15 +214,15 @@ def force_exec_script(processrunid):
 
             ip, username, password, system_tag = "", "", "", ""
             for std_param_el in std_param_els:
-                param_name = std_param_el.attrib.get("param_name", "")
-                if param_name == 'std_host_ip':
-                    ip = std_param_el.attrib.get('std_host_ip', "")
-                if param_name == 'std_host_username':
-                    username = std_param_el.attrib.get('std_host_username', "")
-                if param_name == 'std_host_passwd':
-                    password = std_param_el.attrib.get('std_host_passwd', "")
-                if param_name == 'std_host_system':
-                    system_tag = std_param_el.attrib.get('std_host_system', "")
+                variable_name = std_param_el.attrib.get("variable_name", "")
+                if variable_name == 'std_host_ip':
+                    ip = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_username':
+                    username = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_passwd':
+                    password = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_system':
+                    system_tag = std_param_el.attrib.get('param_value', "")
 
             all_step_runs = processrun.steprun_set.exclude(
                 step__state="9").filter(step__force_exec=1)
@@ -391,20 +391,20 @@ def runstep(steprun, if_repeat=False):
 
     # 备机服务器账户信息
     config = etree.XML(processrun.config)
-
+    print('&&&&&&&&&&%s'%processrun.config)
     std_param_els = config.xpath('//std_param_list/param')
 
     ip, username, password, system_tag = "", "", "", ""
     for std_param_el in std_param_els:
-        param_name = std_param_el.attrib.get("param_name", "")
-        if param_name == 'std_host_ip':
-            ip = std_param_el.attrib.get('std_host_ip', "")
-        if param_name == 'std_host_username':
-            username = std_param_el.attrib.get('std_host_username', "")
-        if param_name == 'std_host_passwd':
-            password = std_param_el.attrib.get('std_host_passwd', "")
-        if param_name == 'std_host_system':
-            system_tag = std_param_el.attrib.get('std_host_system', "")
+        variable_name = std_param_el.attrib.get("variable_name", "")
+        if variable_name == 'std_host_ip':
+            ip = std_param_el.attrib.get('param_value', "")
+        if variable_name == 'std_host_username':
+            username = std_param_el.attrib.get('param_value', "")
+        if variable_name == 'std_host_passwd':
+            password = std_param_el.attrib.get('param_value', "")
+        if variable_name == 'std_host_system':
+            system_tag = std_param_el.attrib.get('param_value', "")
 
     if processrun.state == "RUN" or processrun.state == "ERROR":
         # 将错误流程改成RUN
