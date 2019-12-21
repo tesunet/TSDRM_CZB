@@ -98,20 +98,79 @@
     customProcessDataTable();
 
     $("#confirm").click(function () {
-
+        $('#waiting_run').modal({backdrop: 'static', keyboard: false});
         var process_id = $("#process_id").val();
 
+        var dialog_inputs = $('#config_edit_table thead').find('input');
 
+        var all_text = $('#all_text').val();
+        var new_all_text = "";
+        // 重新构造配置文件
+        for (var i = 0; i < dialog_inputs.length; i++) {
+            var tmp_dialog = dialog_inputs[i].value;
+            var tmp_dialog_id = dialog_inputs[i].id.split("_dialog")[0];
+
+            var new_tmp_dialog = "";
+            var all_config_edit_trs = $('#config_edit_tbody').find('tr');
+
+            for (var j = 0; j < all_config_edit_trs.length; j++) {
+                // var new_line_text = "";
+
+                var cur_config_edit_tr = jQuery(all_config_edit_trs[j]);
+                // 原行信息
+                var line_text = cur_config_edit_tr.attr("line_text");
+                var capacity = cur_config_edit_tr.attr("capacity");
+
+                var space_td = cur_config_edit_tr.find('td:eq(0)').text().trim();
+
+                // if (tmp_dialog.indexOf(space_td) != -1) {
+                if (tmp_dialog_id == space_td) {
+                    // 旧数据
+                    var pre_config_td = cur_config_edit_tr.find('td:eq(1)').text().trim();
+                    var pre_device_path = pre_config_td.split(" ")[0];
+                    // var actual_capacity = pre_config_td.split(" ")[1];  //..
+
+                    // 2048 pre_capacity
+                    var pre_capacity = capacity;
+
+                    // 新数据
+                    var aft_device_path = cur_config_edit_tr.find('td:eq(2)').text().trim();
+                    var aft_capacity = cur_config_edit_tr.find('td:eq(3)').text().trim();
+
+                    // // 预设增量+原容量
+                    // var c_aft_capacity = Number(actual_capacity.trim()) + Number(aft_capacity.trim());
+
+                    var new_line_text = '';
+                    // 当前tr的display为node的替换成空
+                    if (cur_config_edit_tr.css('display') != "none") {
+                        new_line_text = line_text.replace(pre_device_path, aft_device_path).replace(pre_capacity, aft_capacity).replace("DEVICE", "FILE");
+                    }
+
+                    // 替换段落内行数据
+                    if (new_tmp_dialog) {
+                        new_tmp_dialog = new_tmp_dialog.replace(line_text, new_line_text)
+                    } else {
+                        new_tmp_dialog = tmp_dialog.replace(line_text, new_line_text)
+                    }
+                }
+            }
+            if (new_all_text) {
+                new_all_text = new_all_text.replace(tmp_dialog, new_tmp_dialog)
+            } else {
+                new_all_text = all_text.replace(tmp_dialog, new_tmp_dialog)
+            }
+        }
+        // 非邀请流程启动
         $.ajax({
             type: "POST",
             dataType: 'json',
-            url: "../oracle_process_startup/",
+            url: "../process_startup/",
             data: {
                 processid: process_id,
                 run_person: $("#run_person").val(),
                 run_time: $("#run_time").val(),
                 run_reason: $("#run_reason").val(),
-
+                new_config: JSON.stringify(new_all_text),
 
                 // 恢复变量
                 select_time: $('#backupset_edt').val(),
@@ -122,19 +181,19 @@
 
                 // 源机参数：db2.conf文件所需参数
                 db_name: $('#db_name').val(),
+                storage_policy: $('#storage_policy').val(),
                 client_name: $('#client_name').val(),
-                master_name: $('#master_name').val(),
+                schedule_policy: $('#schedule_policy').val(),
 
                 // 备机参数
                 nbu_install_path: $('#nbu_install_path').val(),
-                redirect_path: $('#redirect_path').val(),
-                oracle_user: $('#oracle_user').val(),
-
-                //备份集
-                backupsetname: $('#backupsetname').val(),
-
+                pre_increasement: $('#pre_increasement').val(),
+                std_profile: $('#std_profile').val(),
+                redirect_file_path: $('#redirect_file_path').val(),
+                arch_log_path: $('#arch_log_path').val(),
             },
             success: function (data) {
+                $('#waiting_run').modal('hide');
                 if (data["res"] == "新增成功。") {
                     window.location.href = data["data"];
                 } else
@@ -195,8 +254,6 @@
         $("#target").val("");
 
         $('#config_edit_div').hide();
-        $('#backupsetname').val();
-        $('#backupsetname_div').hide();
     });
 
     $("#run_invited").click(function () {
@@ -531,7 +588,7 @@
         $("#bst_static").modal("show");
         if ($('#bst_status').val() == "complete") {
             var table = $('#bks_dt').dataTable();
-            table.api().ajax.url("../load_oracle_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&std_id=" + $('#std_host').val() + "&pri_host=" + $('#pri_host option:selected').text().trim() + "&db_name=" + $('#db_name').val().trim() + "&nbu_install_path=" + $('#nbu_install_path').val().trim()).load();
+            table.api().ajax.url("../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&std_id=" + $('#std_host').val() + "&pri_host=" + $('#pri_host option:selected').text().trim() + "&db_name=" + $('#db_name').val().trim() + "&nbu_install_path=" + $('#nbu_install_path').val().trim()).load();
         } else {
             $('#bst_status').val('');
             $('#bks_dt').dataTable({
@@ -540,11 +597,10 @@
                 "bSort": false,
                 "bProcessing": true,
                 // 备机id
-                "ajax": "../load_oracle_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&std_id=" + $('#std_host').val() + "&pri_host=" + $('#pri_host option:selected').text().trim() + "&db_name=" + $('#db_name').val().trim() + "&nbu_install_path=" + $('#nbu_install_path').val().trim(),
+                "ajax": "../load_backupset/?process_id=" + $("#process_id").val() + "&backupset_edt=" + $("#backupset_edt").val() + "&std_id=" + $('#std_host').val() + "&pri_host=" + $('#pri_host option:selected').text().trim() + "&db_name=" + $('#db_name').val().trim() + "&nbu_install_path=" + $('#nbu_install_path').val().trim(),
                 "columns": [
                     {"data": "id"},
                     {"data": "bks_time"},
-                    {"data": "tag"},
                     {"data": null}
                 ],
                 "columnDefs": [{
@@ -603,16 +659,94 @@
                 return
             }
         });
-        $('#backupsetname').val(bcs_time);
-        $('#backupsetname_div').show();
-        if(bcs_time) {
-            $('#run_div').show();
-        }
-        else{
-            $('#run_div').hide();
-        }
 
+        var std_id = $('#std_host').val();
+        $('#loadingModal').modal({backdrop: 'static', keyboard: false});
+        // 选择之后，传入process_id/备份集时间 >> 生成/读取配置文件
+        // 修改重定向路径/预设增量 >> 重新生成配置文件
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "../../set_rec_config/",
+            data: {
+                process_id: $('#process_id').val(),
+                bcs_time: bcs_time,
 
+                std_profile: $('#std_profile').val(),
+                nbu_install_path: $('#nbu_install_path').val(),
+                pre_increasement: $('#pre_increasement').val(),
+
+                pri_host_id: $('#pri_host').val(),
+                std_host_id: $('#std_host').val(),
+
+                // 源机参数：db2.conf文件所需参数
+                db_name: $('#db_name').val(),
+                storage_policy: $('#storage_policy').val(),
+                client_name: $('#client_name').val(),
+                schedule_policy: $('#schedule_policy').val(),
+                redirect_file_path: $('#redirect_file_path').val()
+            },
+            success: function (data) {
+                $('#loadingModal').modal('hide');
+                if (data.ret == 0) {
+                    alert(data.data);
+                } else {
+                    // 生成配置表格>> 可修改
+                    $('#config_edit_div').show();
+                    $('#config_edit_table tbody').empty();
+                    $('#all_text').val(data.data.all_text);
+                    // $('#all_text').val(data.data.all_text.replace("\\r", "\r").replace("\\n", "\n"));
+
+                    var pre_space_name_list = [];
+                    var pre_space_name = '';
+
+                    for (var i = 0; i < data.data.split_part_list.length; i++) {
+                        $('#config_edit_table thead').append(
+                            '<input type="text" id="' + data.data.split_part_list[i].space_name + '_dialog" name="' + data.data.split_part_list[i].space_name + '_dialog" value="' + data.data.split_part_list[i].space_dialog.replace("\\r", "\r").replace("\\n", "\n") + '" hidden>'
+                        );
+
+                        for (var j = 0; j < data.data.split_part_list[i].params_list.length; j++) {
+
+                            var pre_file_size = Number(data.data.split_part_list[i].params_list[j].pre_increasement) + Number(data.data.split_part_list[i].params_list[j].actual_capacity);
+
+                            // 第一个space_name >> pre_space_name_list添加有重复项的space_name
+                            if (pre_space_name == data.data.split_part_list[i].space_name && pre_space_name_list.indexOf(data.data.split_part_list[i].space_name) == -1) {
+                                pre_space_name_list.push(pre_space_name);
+                            } else {
+                                pre_space_name = data.data.split_part_list[i].space_name;
+                            }
+
+                            $('#config_edit_table tbody').append(
+                                '<tr id="' + data.data.split_part_list[i].space_name + '" line_text="' + data.data.split_part_list[i].params_list[j].line_text + '" capacity="' + data.data.split_part_list[i].params_list[j].capacity + '">' +
+                                '<td>' +
+                                '&nbsp&nbsp' + data.data.split_part_list[i].space_name +
+                                '</td>' +
+                                '<td> ' + data.data.split_part_list[i].params_list[j].device_path + ' ' + data.data.split_part_list[i].params_list[j].actual_capacity + ' </td>' +
+                                '<td class="hidden-xs"> ' + data.data.split_part_list[i].params_list[j].device_path + ' </td>' +
+                                '<td> ' + pre_file_size + ' </td>' +
+                                '<td>' +
+                                '<a href="javascript:;" class="btn btn-outline btn-circle dark btn-sm black" name="edit_config">' +
+                                '<i class="fa fa-edit"></i> 修改 </a>' +
+                                '</td>' +
+                                '</tr>'
+                            );
+                        }
+                    }
+
+                    // 重复项首个添加图案 '  <span><a href="javascript:;" title="合并" name="merge"><i class="fa fa-plus-square-o"></i></a></span>';fa fa-minus-square-o
+                    $('#config_edit_table tbody').find('tr');
+                    for (var i = 0; i < pre_space_name_list.length; i++) {
+                        $('#config_edit_table tbody').find('tr[id="' + pre_space_name_list[i] + '"]:eq(0)').find('td:eq(0)').html('&nbsp&nbsp' + pre_space_name_list[i] + '  <span><a href="javascript:;" title="合并" name="merge"><i class="fa fa-minus-square-o"></i></a></span>');
+                    }
+                }
+                // 加载成功后显示启动按钮
+                $('#run_div').show();
+            },
+            error: function () {
+                alert("页面出现错误，请于管理员联系。");
+                $('#loadingModal').modal('hide');
+            }
+        });
         $('#bst_static').modal('hide');
     });
 
@@ -751,7 +885,7 @@
         var pri_host_type_display = $('#pri_host_type_display').val();
         var std_host_type_display = $('#std_host_type_display').val();
 
-        if (pri_host_type_display.indexOf("Oracle") != -1 && std_host_type_display.indexOf("Oracle") != -1) {
+        if (pri_host_type_display.indexOf("DB2") != -1 && std_host_type_display.indexOf("DB2") != -1) {
             $('#load_backupset').parent().show();
         } else {
             $('#load_backupset').parent().hide();

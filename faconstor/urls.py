@@ -84,9 +84,11 @@ urlpatterns = [
     url(r'^remove_verify_item/$', remove_verify_item),
 
     # Oracle恢复
+    url(r'^db2_restore/(?P<process_id>\d+)$', db2_restore),
     url(r'^oracle_restore/(?P<process_id>\d+)$', oracle_restore),
     url(r'^oracle_restore_data/$', oracle_restore_data),
     url(r'^process_startup/$', process_startup),
+    url(r'^oracle_process_startup/$', oracle_process_startup),
     url(r'^cv_oracle/(\d+)/$', cv_oracle, {'funid': '49'}),
     url(r'^save_invitation/$', save_invitation),
     url(r'^cv_oracle_run_invited/$', cv_oracle_run_invited),
@@ -170,5 +172,6 @@ urlpatterns = [
 
     # 加载备份集
     url(r'^load_backupset/$', load_backupset),
+    url(r'^load_oracle_backupset/$', load_oracle_backupset),
     url(r'^set_rec_config/$', set_rec_config),
 ]

@@ -173,7 +173,7 @@ def getpagefuns(funid, request=""):
         if len(myurl) > 0:
             myurl = myurl[:-1]
             jsurl = jsurl[:-1]
-            if "oracle_restore" in myurl:
+            if "oracle_restore" in myurl or "db2_restore" in myurl :
                 compile_obj = re.compile(r"/.*/")
                 jsurl = compile_obj.findall(myurl)[0][:-1]
         mycurfun = {"id": curfun[0].id, "name": curfun[0].name, "url": myurl, "jsurl": jsurl}
@@ -3618,6 +3618,200 @@ def process_del(request):
         else:
             return HttpResponse(0)
 
+def db2_restore(request, process_id):
+    if request.user.is_authenticated():
+        all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by(
+            "sort").prefetch_related("script_set", "verifyitems_set")
+        wrapper_step_list = []
+        num_to_char_choices = {
+            "1": "一",
+            "2": "二",
+            "3": "三",
+            "4": "四",
+            "5": "五",
+            "6": "六",
+            "7": "七",
+            "8": "八",
+            "9": "九",
+        }
+        for num, wrapper_step in enumerate(all_wrapper_steps):
+            wrapper_step_dict = {}
+            wrapper_step_dict["wrapper_step_name"] = num_to_char_choices[
+                                                         "{0}".format(str(num + 1))] + "." + wrapper_step.name
+            wrapper_step_group_id = wrapper_step.group
+            try:
+                wrapper_step_group_id = int(wrapper_step_group_id)
+            except:
+                wrapper_step_group_id = None
+            wrapper_step_group = Group.objects.filter(id=wrapper_step_group_id)
+            if wrapper_step_group:
+                wrapper_step_group_name = wrapper_step_group[0].name
+            else:
+                wrapper_step_group_name = ""
+            wrapper_step_dict["wrapper_step_group_name"] = wrapper_step_group_name
+
+            wrapper_script_list = []
+            all_wrapper_scripts = wrapper_step.script_set.exclude(state="9").order_by("sort")
+            for wrapper_script in all_wrapper_scripts:
+                wrapper_script_dict = {
+                    "wrapper_script_name": wrapper_script.name
+                }
+                wrapper_script_list.append(wrapper_script_dict)
+                wrapper_step_dict["wrapper_script_list"] = wrapper_script_list
+
+            wrapper_verify_list = []
+            all_wrapper_verifys = wrapper_step.verifyitems_set.exclude(state="9")
+            for wrapper_verify in all_wrapper_verifys:
+                wrapper_verify_dict = {
+                    "wrapper_verify_name": wrapper_verify.name
+                }
+                wrapper_verify_list.append(wrapper_verify_dict)
+                wrapper_step_dict["wrapper_verify_list"] = wrapper_verify_list
+
+            pnode_id = wrapper_step.id
+            inner_step_list = []
+            all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id).order_by(
+                "sort").prefetch_related("script_set", "verifyitems_set")
+            for inner_step in all_inner_steps:
+                inner_step_dict = {}
+                inner_step_dict["inner_step_name"] = inner_step.name
+
+                inner_step_group_id = inner_step.group
+                try:
+                    inner_step_group_id = int(inner_step_group_id)
+                except:
+                    inner_step_group_id = None
+                inner_step_group = Group.objects.filter(id=inner_step_group_id)
+                if inner_step_group:
+                    inner_step_group_name = inner_step_group[0].name
+                else:
+                    inner_step_group_name = ""
+                inner_step_dict["inner_step_group_name"] = inner_step_group_name
+
+                inner_script_list = []
+                all_inner_scripts = inner_step.script_set.exclude(state="9").order_by("sort")
+                for inner_script in all_inner_scripts:
+                    inner_script_dict = {
+                        "inner_script_name": inner_script.name
+                    }
+                    inner_script_list.append(inner_script_dict)
+
+                inner_verify_list = []
+                all_inner_verifys = inner_step.verifyitems_set.exclude(state="9")
+                for inner_verify in all_inner_verifys:
+                    inner_verify_dict = {
+                        "inner_verify_name": inner_verify.name
+                    }
+                    inner_verify_list.append(inner_verify_dict)
+
+                inner_step_dict["inner_verify_list"] = inner_verify_list
+                inner_step_dict["inner_script_list"] = inner_script_list
+                inner_step_list.append(inner_step_dict)
+
+            wrapper_step_dict["inner_step_list"] = inner_step_list
+
+            wrapper_step_list.append(wrapper_step_dict)
+
+        # 计划流程
+        plan_process_run = ProcessRun.objects.filter(process_id=process_id, state="PLAN")
+        if plan_process_run:
+            plan_process_run = plan_process_run[0]
+            plan_process_run_id = plan_process_run.id
+        else:
+            plan_process_run_id = ""
+
+        # 根据url寻找到funid
+        db2_restore_url = "/db2_restore/{0}".format(process_id)
+
+        c_fun = Fun.objects.filter(url=db2_restore_url)
+        if c_fun.exists():
+            c_fun = c_fun[0]
+            funid = str(c_fun.id)
+        else:
+            return Http404()
+
+        # commvault目标客户端
+        all_targets = Target.objects.exclude(state="9")
+
+        # commvault源客户端
+        all_steps = Step.objects.exclude(state="9").filter(process_id=process_id).prefetch_related(
+            "script_set", "script_set__origin", "script_set__origin__target")
+
+        target_id = ""
+        origin = ""
+        data_path = ""
+        copy_priority = ""
+        db_open = ""
+        for cur_step in all_steps:
+            # all_scripts = Script.objects.filter(step_id=cur_step.id).exclude(state="9").select_related("origin")
+            all_scripts = cur_step.script_set.exclude(state="9")
+            for cur_script in all_scripts:
+                if cur_script.origin:
+                    origin = cur_script.origin
+                    target_id = cur_script.origin.target.id
+                    data_path = cur_script.origin.data_path
+                    copy_priority = cur_script.origin.copy_priority
+                    db_open = cur_script.origin.db_open
+                    break
+
+        all_hosts = HostsManage.objects.exclude(state='9').filter(host_type__in=[1,2])
+
+        # 对应不同主机类型，匹配参数
+        # [{
+        #     "host_id": "",
+        #     "host_config_list": [{
+        #         "param_name": "",
+        #         "variable_name": "",
+        #         "param_value": ""
+        #     }]
+        # }, {
+        #     "host_id": "",
+        #     "host_config_list": [{
+        #         "param_name": "",
+        #         "variable_name": "",
+        #         "param_value": ""
+        #     }]
+        # }, ...]
+
+        # <root>
+        #   <variable_param_list>
+        #       <param param_name="参数1" variable_name="param1" param_value="2"/>
+        #   </variable_param_list>
+        # </root>
+
+        param_list = []
+        for host in all_hosts:
+
+            host_config_list = []
+            try:
+                config = etree.XML(host.config)
+
+                param_el = config.xpath("//param")
+                for v_param in param_el:
+                    host_config_list.append({
+                        "param_name": v_param.attrib.get("param_name", ""),
+                        "variable_name": v_param.attrib.get("variable_name", ""),
+                        "param_value": v_param.attrib.get("param_value", "")
+                    })
+            except Exception as e:
+                print(e)
+
+            param_list.append({
+                "host_id": host.id,
+                "host_name": host.host_name,
+                "host_config_list": host_config_list,
+                "host_type_tag": host.host_type % 2 if host.host_type else "",
+                "host_type_display": host.get_host_type_display(),
+            })
+        return render(request, 'db2_restore.html',
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
+                       "wrapper_step_list": wrapper_step_list, "process_id": process_id, "data_path": data_path,
+                       "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
+                       "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open,
+                       "param_list_json": json.dumps(param_list), "param_list": param_list})
+    else:
+        return HttpResponseRedirect("/login")
+
 
 def oracle_restore(request, process_id):
     if request.user.is_authenticated():
@@ -3755,7 +3949,7 @@ def oracle_restore(request, process_id):
                     db_open = cur_script.origin.db_open
                     break
 
-        all_hosts = HostsManage.objects.exclude(state='9')
+        all_hosts = HostsManage.objects.exclude(state='9').filter(host_type__in=[3,4])
 
         # 对应不同主机类型，匹配参数
         # [{
@@ -4056,6 +4250,242 @@ def process_startup(request):
                                 "std_profile": std_profile,
                                 "redirect_file_path": redirect_file_path,
                                 "arch_log_path": arch_log_path,
+
+                                "std_host_ip": std_host_ip,
+                                "std_host_name": std_host_name,
+                                "std_host_username": std_host_username,
+                                "std_host_passwd": std_host_passwd,
+                                "std_host_system": std_host_system,
+                            }
+
+                            for k, v in std_param_dict.items():
+                                param = etree.SubElement(std_param_list, "param")
+                                param.attrib["variable_name"] = k
+                                param.attrib["param_value"] = v
+
+                            config = etree.tounicode(root)
+
+                            myprocessrun.config = config
+                            myprocessrun.save()
+
+                            mystep = process.step_set.exclude(state="9").order_by("sort")
+                            if (len(mystep) <= 0):
+                                result["res"] = '流程启动失败，没有找到可用步骤。'
+                            else:
+                                for step in mystep:
+                                    mysteprun = StepRun()
+                                    mysteprun.step = step
+                                    mysteprun.processrun = myprocessrun
+                                    mysteprun.state = "EDIT"
+                                    mysteprun.save()
+
+                                    myscript = step.script_set.exclude(state="9").order_by("sort")
+                                    for script in myscript:
+                                        myscriptrun = ScriptRun()
+                                        myscriptrun.script = script
+                                        myscriptrun.steprun = mysteprun
+                                        myscriptrun.state = "EDIT"
+                                        myscriptrun.save()
+
+                                    myverifyitems = step.verifyitems_set.exclude(state="9")
+                                    for verifyitems in myverifyitems:
+                                        myverifyitemsrun = VerifyItemsRun()
+                                        myverifyitemsrun.verify_items = verifyitems
+                                        myverifyitemsrun.steprun = mysteprun
+                                        myverifyitemsrun.save()
+
+                                allgroup = process.step_set.exclude(state="9").exclude(
+                                    Q(group="") | Q(group=None)).values(
+                                    "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+                                if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                                    # 将当前流程改成SIGN
+                                    c_process_run_id = myprocessrun.id
+                                    c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                                    if c_process_run:
+                                        c_process_run = c_process_run[0]
+                                        c_process_run.state = "SIGN"
+                                        c_process_run.save()
+
+                                    for group in allgroup:
+                                        try:
+                                            signgroup = Group.objects.get(id=int(group["group"]))
+                                            groupname = signgroup.name
+                                            myprocesstask = ProcessTask()
+                                            myprocesstask.processrun = myprocessrun
+                                            myprocesstask.starttime = datetime.datetime.now()
+                                            myprocesstask.senduser = request.user.username
+                                            myprocesstask.receiveauth = group["group"]
+                                            myprocesstask.type = "SIGN"
+                                            myprocesstask.state = "0"
+                                            myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                            myprocesstask.save()
+                                        except:
+                                            pass
+                                    result["res"] = "新增成功。"
+                                    result["data"] = "/"
+
+                                else:
+                                    prosssigns = ProcessTask.objects.filter(processrun=myprocessrun, state="0")
+                                    if len(prosssigns) <= 0:
+                                        myprocess = myprocessrun.process
+                                        myprocesstask = ProcessTask()
+                                        myprocesstask.processrun = myprocessrun
+                                        myprocesstask.starttime = datetime.datetime.now()
+                                        myprocesstask.type = "INFO"
+                                        myprocesstask.logtype = "START"
+                                        myprocesstask.state = "1"
+                                        myprocesstask.senduser = request.user.username
+                                        myprocesstask.content = "流程已启动。"
+                                        myprocesstask.save()
+
+                                        exec_process.delay(myprocessrun.id)
+                                        result["res"] = "新增成功。"
+                                        result["data"] = "/processindex/" + str(myprocessrun.id)
+
+        return HttpResponse(json.dumps(result))
+
+
+def oracle_process_startup(request):
+    if request.user.is_authenticated():
+        result = {}
+        processid = request.POST.get('processid', '')
+        run_person = request.POST.get('run_person', '')
+        run_time = request.POST.get('run_time', '')
+        run_reason = request.POST.get('run_reason', '')
+
+
+        # 主机变量
+        pri_host_id = request.POST.get('pri_host_id', '')
+        std_host_id = request.POST.get('std_host_id', '')
+
+        # 恢复变量
+        select_time = request.POST.get('select_time', '')
+
+        # 源机参数：db2.conf文件生成所需参数
+        db_name = request.POST.get('db_name', '')
+        client_name = request.POST.get('client_name', '')
+        master_name = request.POST.get('master_name', '')
+
+        # 源机：数据库名db_name、存储策略storage_policy、计划策略schedule_policy、客户端名client_name
+        # 备机：NBU安装目录nbu_install_path、预设增量pre_increasement、恢复用户名std_profile、Redirect
+        #       File路径redirect_file_path、归档日志路径arch_log_path
+
+        # 备机参数
+        nbu_install_path = request.POST.get('nbu_install_path', '')
+        redirect_path = request.POST.get('redirect_path', '')
+        oracle_user = request.POST.get('oracle_user', '')
+
+        # 备份集
+        backupsetname = request.POST.get('backupsetname', '')
+
+        try:
+            pri_host_id = int(pri_host_id)
+        except ValueError as e:
+            return JsonResponse({"res": "源机未选择。"})
+        try:
+            std_host_id = int(std_host_id)
+        except ValueError as e:
+            return JsonResponse({"res": "备机未选择。"})
+
+        try:
+            processid = int(processid)
+        except:
+            return JsonResponse({"res": "当前流程不存在。"})
+
+        process = Process.objects.filter(id=processid).exclude(state="9").filter(type="cv_oracle")
+        if (len(process) <= 0):
+            result["res"] = '流程启动失败，该流程不存在。'
+        else:
+            process = process[0]
+
+            if redirect_path.endswith("/"):
+                pass
+            else:
+                redirect_path = redirect_path + "/"
+
+            # 源机信息
+            try:
+                pri_host = HostsManage.objects.get(id=pri_host_id)
+            except HostsManage.DoesNotExist as e:
+                return JsonResponse({"res": "该源机不存在。"})
+            else:
+                pri_host_ip = pri_host.host_ip
+                pri_host_name = pri_host.host_name
+                pri_host_username = pri_host.username
+                pri_host_passwd = pri_host.password
+                pri_host_system = pri_host.os
+
+                # 备机信息
+                try:
+                    std_host = HostsManage.objects.get(id=std_host_id)
+                except HostsManage.DoesNotExist as e:
+                    return JsonResponse({"res": "该备机不存在。"})
+                else:
+                    std_host_ip = std_host.host_ip
+                    std_host_name = std_host.host_name
+                    std_host_username = std_host.username
+                    std_host_passwd = std_host.password
+                    std_host_system = std_host.os
+
+                    running_process = ProcessRun.objects.filter(process=process, state__in=["RUN", "ERROR"])
+                    if (len(running_process) > 0):
+                        result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
+                    else:
+                        planning_process = ProcessRun.objects.filter(process=process, state="PLAN")
+                        if (len(planning_process) > 0):
+                            result["res"] = '流程启动失败，计划流程未执行，务必先完成计划流程。'
+                        else:
+                            myprocessrun = ProcessRun()
+                            myprocessrun.process = process
+                            myprocessrun.starttime = datetime.datetime.now()
+                            myprocessrun.creatuser = request.user.username
+                            myprocessrun.run_reason = run_reason
+                            myprocessrun.state = "RUN"
+
+                            # 恢复变量
+                            root = etree.Element("root")
+                            restore_param_list = etree.SubElement(root, "restore_param_list")
+
+                            select_strp_time = datetime.datetime.strptime(select_time, "%Y/%m/%d %H:%M:%S")
+                            # 指定时间点/前2天 日志开始时间 日志结束时间
+                            restore_param_dict = {
+                                "select_time": select_strp_time.strftime("%Y/%m/%d %H:%M:%S"),
+                                "backupsetname":backupsetname,
+                            }
+
+                            for k, v in restore_param_dict.items():
+                                param = etree.SubElement(restore_param_list, "param")
+                                param.attrib["variable_name"] = k
+                                param.attrib["param_value"] = v
+
+                            # 源机变量
+                            pri_param_list = etree.SubElement(root, "pri_param_list")
+
+                            pri_param_dict = {
+                                "db_name": db_name,
+                                "client_name": client_name,
+                                "master_name": master_name,
+
+                                "pri_host_ip": pri_host_ip,
+                                "pri_host_name": pri_host_name,
+                                "pri_host_username": pri_host_username,
+                                "pri_host_passwd": pri_host_passwd,
+                                "pri_host_system": pri_host_system,
+                            }
+
+                            for k, v in pri_param_dict.items():
+                                param = etree.SubElement(pri_param_list, "param")
+                                param.attrib["variable_name"] = k
+                                param.attrib["param_value"] = v
+
+                            # 备机变量
+                            std_param_list = etree.SubElement(root, "std_param_list")
+
+                            std_param_dict = {
+                                "nbu_install_path": nbu_install_path,
+                                "redirect_path": redirect_path,
+                                "oracle_user": oracle_user,
 
                                 "std_host_ip": std_host_ip,
                                 "std_host_name": std_host_name,
@@ -8031,6 +8461,71 @@ def set_rec_config(request):
                 "ret": 1,
                 "data": whole_dict
             })
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def load_oracle_backupset(request):
+    if request.user.is_authenticated():
+        # 'process_id': ['17'], 'backupset_edt': ['2019/12/6 16:06:19']
+        process_id = request.GET.get("process_id", "")
+        backupset_edt = request.GET.get("backupset_edt", "")
+        std_id = request.GET.get("std_id", "")
+        pri_host = request.GET.get("pri_host", "")
+
+        db_name = request.GET.get("db_name", "")
+        nbu_install_path = request.GET.get("nbu_install_path", "")
+
+        dts_list = []
+
+        try:
+            std_id = int(std_id)
+            std_host = HostsManage.objects.get(id=std_id)
+        except:
+            pass
+        else:
+            if all([nbu_install_path, db_name, backupset_edt, pri_host, std_host]):
+                std_host_ip = std_host.host_ip
+                std_host_username = std_host.username
+                std_host_passwd = std_host.password
+                std_host_system = std_host.os
+
+                # 修改时间格式 %m/%d/%Y %H:%M:%S
+                try:
+                    # backupset_edt 后两天
+                    c_backupset_stt = datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S").strftime(
+                        "%m/%d/%Y %H:%M:%S")
+                    c_backupset_edt = (
+                            datetime.datetime.strptime(backupset_edt, "%Y/%m/%d %H:%M:%S") + datetime.timedelta(
+                        days=2)).strftime("%m/%d/%Y %H:%M:%S")
+                except:
+                    pass
+                else:
+                    load_backupset_cmd = "cd {nbu_install_path}&&./bplist -C {pri_host} -t 4 -s {backupset_stt} -e {backupset_edt} -R -l /".format(
+                        nbu_install_path=nbu_install_path, pri_host=pri_host, backupset_stt=c_backupset_stt,
+                        backupset_edt=c_backupset_edt
+                    )
+                    server_obj = ServerByPara(r"{0}".format("bash -lc '" + load_backupset_cmd + "'"), std_host_ip, std_host_username,
+                                              std_host_passwd, std_host_system)
+                    result = server_obj.run("")
+
+                    dts_list = []
+                    if result['exec_tag'] == 0:
+                        #com = re.compile("{db_name}/[a-z A-Z 0-9]+/(\d+)/".format(db_name=db_name.upper()))
+                        com = re.compile('.*?\d+[ ]+(.*?)[ ]+\/(ctrl_.+)')
+                        ret_list = list(set(com.findall(result["data"])))
+
+                        pre_bks_time = ""
+                        # 构造dataTable数据
+                        for n, r in enumerate(ret_list):
+                            dts_list.append({
+                                "id":n+1,
+                                "bks_time": r[0],
+                                "tag": "/" + r[1]
+                            })
+        return JsonResponse({
+            "data": dts_list
+        })
     else:
         return HttpResponseRedirect("/login")
 

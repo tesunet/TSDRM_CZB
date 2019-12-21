@@ -227,13 +227,35 @@
                                 </div>
                                 <div class="col-md-5"></div>
                             </div>
-                            <div  hidden class="form-group" id='backupsetname_div'>
-
-                                <label class="col-md-2 control-label"><span style="color:red; "></span>备份集</label>
+                            <div class='form-group' id='config_edit_div' hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>配置修改</label>
                                 <div class="col-md-10">
-                                    <input  readonly id="backupsetname" type="text" name="backupsetname" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
+                                    <table class="table table-bordered table-advance table-hover"
+                                           id='config_edit_table'>
+                                        <input type="text" id='all_text' name='all_text' hidden>
+                                        <thead>
+                                        <tr>
+                                            <th>
+                                                <i class="fa fa-bars"></i> 表空间
+                                            </th>
+                                            <th class="hidden-xs">
+                                                <i class="fa fa-cogs"></i> 原配置
+                                            </th>
+                                            <th class="hidden-xs">
+                                                <i class="fa fa-folder"></i> 重定向路径 <span><a href="javascript:;"
+                                                                                            title="批量修改"
+                                                                                            id='batch_edit'><i
+                                                    class="fa fa-edit"></i></a></span></th>
+                                            <th>
+                                                <i class="fa fa-level-up"></i> 预设文件大小(M)
+                                            </th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id='config_edit_tbody'>
+
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -307,7 +329,6 @@
                         <tr>
                             <th style="width:40px;"> 序号</th>
                             <th> 备份集时间点</th>
-                            <th> 备份集名称</th>
                             <th style="width:50px;"> 状态</th>
                         </tr>
                         </thead>
