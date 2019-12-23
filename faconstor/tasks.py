@@ -391,7 +391,7 @@ def runstep(steprun, if_repeat=False):
 
     # 备机服务器账户信息
     config = etree.XML(processrun.config)
-    print('&&&&&&&&&&%s'%processrun.config)
+
     std_param_els = config.xpath('//std_param_list/param')
 
     ip, username, password, system_tag = "", "", "", ""

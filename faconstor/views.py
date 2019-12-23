@@ -8518,11 +8518,26 @@ def load_oracle_backupset(request):
                         pre_bks_time = ""
                         # 构造dataTable数据
                         for n, r in enumerate(ret_list):
+                            bks_time = ''
+                            try:
+                                bks_time = datetime.datetime.strptime(r[0], "%b %d %H:%M").strftime("%m-%d %H:%M")
+                            except Exception as e:
+                                print(e)
+
                             dts_list.append({
                                 "id":n+1,
-                                "bks_time": r[0],
+                                "bks_time": bks_time,
                                 "tag": "/" + r[1]
                             })
+                        # 排序
+                        try:
+                            dts_list = sorted(dts_list, key=lambda x: datetime.datetime.strptime(x["bks_time"], "%m-%d %H:%M"))
+                            for n, dts in enumerate(dts_list):
+                                dts["id"] = n + 1
+                        except:
+                            pass
+
+
         return JsonResponse({
             "data": dts_list
         })

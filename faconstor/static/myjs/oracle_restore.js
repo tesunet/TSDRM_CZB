@@ -511,7 +511,6 @@
 
     $('#backupset_edt').datetimepicker({
         autoclose: true,
-        minView: "month",
         format: 'yyyy/mm/dd hh:ii:ss',
     });
 
