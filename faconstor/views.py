@@ -8227,7 +8227,7 @@ def load_backupset(request):
                         nbu_install_path=nbu_install_path, pri_host=pri_host, backupset_stt=c_backupset_stt,
                         backupset_edt=c_backupset_edt
                     )
-
+                    print(load_backupset_cmd)
                     server_obj = ServerByPara(r"{0}".format(load_backupset_cmd), std_host_ip, std_host_username,
                                               std_host_passwd, std_host_system)
                     result = server_obj.run("")
@@ -8343,16 +8343,22 @@ def set_rec_config(request):
             # )
 
             set_rec_config_cmd = ""
+            nbdb2_file_fix = ""
+            if std_host_system.upper() == 'AIX':
+                nbdb2_file_fix = 'sl64'
+            if std_host_system.upper() == 'LINUX':
+                nbdb2_file_fix = 'so64'
+
             # 生成配置文件
             if bcs_time:
-                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.so64 taken at {bcs_time} redirect generate script {db_name}.txt'
+                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.{{nbdb2_file_fix}} taken at {bcs_time} redirect generate script {db_name}.txt'
                 """.format(std_profile=std_profile, db_name=db_name, nbu_install_path=nbu_install_path,
                            bcs_time=bcs_time,
-                           redirect_file_path=redirect_file_path)
+                           redirect_file_path=redirect_file_path, nbdb2_file_fix=nbdb2_file_fix)
             else:
-                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.so64 redirect generate script {db_name}.txt'
+                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.{{nbdb2_file_fix}} redirect generate script {db_name}.txt'
                 """.format(std_profile=std_profile, db_name=db_name, nbu_install_path=nbu_install_path,
-                           redirect_file_path=redirect_file_path)
+                           redirect_file_path=redirect_file_path, nbdb2_file_fix=nbdb2_file_fix)
 
             print("生成配置文件命令: %s" % set_rec_config_cmd)
             server_obj = ServerByPara(r"{0}".format(set_rec_config_cmd), std_host_ip, std_host_username,

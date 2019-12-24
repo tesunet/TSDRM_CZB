@@ -269,4 +269,41 @@ $(document).ready(function () {
 
         $("#static01").modal("hide");
     });
+
+    $('#host_type').change(function () {
+        $('#param_se').empty();
+        // empty
+        if ($(this).val() == 1) {
+            $('#param_se').append(
+                '<option value="db_name">数据库名: </option>' + '\n' +
+                '<option value="storage_policy">存储策略: </option>' + '\n' +
+                '<option value="schedule_policy">计划策略: </option>' + '\n' +
+                '<option value="client_name">客户端名: </option>'
+            )
+        }
+        if ($(this).val() == 2) {
+            $('#param_se').append(
+                '<option value="nbu_install_path">NBU安装目录: </option>' + '\n' +
+                '<option value="pre_increasement">预设增量: </option>' + '\n' +
+                '<option value="std_profile">恢复用户名: </option>' + '\n' +
+                '<option value="redirect_file_path">Redirect File路径: </option>' + '\n' +
+                '<option value="arch_log_path">归档日志路径: </option>'
+            )
+        }
+        if ($(this).val() == 3) {
+            $('#param_se').append(
+                '<option value="db_name">数据库名: </option>' + '\n' +
+                '<option value="client_name">客户端名: </option>' + '\n' +
+                '<option value="master_name">NBU master名: </option>'
+            )
+        }
+        if ($(this).val() == 4) {
+            $('#param_se').append(
+                '<option value="nbu_install_path">NBU安装目录: </option>' + '\n' +
+                '<option value="redirect_path">重定向路径: </option>' + '\n' +
+                '<option value="oracle_user">oracle用户名: </option>' 
+            )
+        }
+    })
+
 });
