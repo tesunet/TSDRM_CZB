@@ -21,6 +21,8 @@
             "columns": [
                 {"data": "processrun_id"},
                 {"data": "process_name"},
+                {"data": "pri_host_ip"},
+                {"data": "std_host_ip"},
                 {"data": "createuser"},
                 {"data": "state"},
                 {"data": "run_reason"},
@@ -44,9 +46,9 @@
             }, {
                 "targets": -1,  // 指定最后一列添加按钮；
                 "data": null,
-                "width": "60px",  // 指定列宽；
+                "width": "100px",  // 指定列宽；
                 "render": function (data, type, full) {
-                    return "<td><a href='/custom_pdf_report/?processrunid&processid'><button class='btn btn-xs btn-primary' type='button'><i class='fa fa-arrow-circle-down' style='color: white'></i></button></a><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
+                    return "<td><button title='查看日志'  id='more_log' class='btn btn-xs btn-primary' type='button'><i class='fa fa-eye'></i></button><a href='/custom_pdf_report/?processrunid&processid'><button class='btn btn-xs btn-primary' type='button'><i class='fa fa-arrow-circle-down' style='color: white'></i></button></a><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
                 }
             }],
 
@@ -67,6 +69,104 @@
 
             }
         });
+        $('#sample_1 tbody').on('click', 'button#more_log', function () {
+            var table = $('#sample_1').DataTable();
+            var data = table.row($(this).parents('tr')).data();
+            $.ajax({
+                type: "POST",
+                url: "../../more_log/",
+                data:
+                    {
+                        processrun_id: data.processrun_id,
+                    },
+                success: function (data) {
+                    if (data.ret == 1) {
+                        var log_content = data.data;
+                        // ..弹出模态框
+                        $('#more_log_show').modal('show');
+                        var content_el = $('#more_log_show').find('.modal-body');
+                        var init = "";
+
+                        init += log_content.ele_xml01 +
+                            '<ul>\n' +
+                            '    <li>开始时间：' + log_content.start_time + '</li>\n' +
+                            '    <li>结束时间：' + log_content.end_time + '</li>\n' +
+                            '    <li>源机IP：' + log_content.pri_host_ip + '</li>\n' +
+                            '    <li>主机IP：' + log_content.std_host_ip + '</li>\n' +
+                            '</ul>\n' +
+                            log_content.ele_xml02;
+                        var step_el = '<ul>';
+
+                        if (log_content.step_info_list.length > 0) {
+                            for (var i = 0; i < log_content.step_info_list.length; i++) {
+                                step_el += '<li>  ' + log_content.step_info_list[i].step_name + '</li>\n' +
+                                    '<li>&nbsp&nbsp 开始时间：' + log_content.step_info_list[i].start_time + '</li>\n' +
+                                    '<li>&nbsp&nbsp 结束时间：' + log_content.step_info_list[i].end_time + '</li>\n';
+
+                                if (log_content.step_info_list[i].script_list_wrapper > 0) {
+                                    step_el += '<li>&nbsp&nbsp 接口：<ul>';
+                                    for (var j = 0; j < log_content.step_info_list[i].script_list_wrapper.length; j++) {
+                                        step_el += '<li>  ' + log_content.step_info_list[i].script_list_wrapper[j].script_name + '</li>\n' +
+                                            '<li>&nbsp&nbsp 开始时间：' + log_content.step_info_list[i].script_list_wrapper[j].start_time + '</li>\n' +
+                                            '<li>&nbsp&nbsp 结束时间：' + log_content.step_info_list[i].script_list_wrapper[j].end_time + '</li>\n' +
+                                            '<li>&nbsp&nbsp 状态：' + log_content.step_info_list[i].script_list_wrapper[j].state + '</li>\n' +
+                                            '<li>&nbsp&nbsp 脚本内容：<p>' + html_encode(log_content.step_info_list[i].script_list_wrapper[j].script_text) + '</p></li>\n' +
+                                            '<li>&nbsp&nbsp 执行结果：<p>' + html_encode(log_content.step_info_list[i].script_list_wrapper[j].explain) + '</li>';
+                                    }
+                                    step_el += '</ul></li>';
+                                }
+                                step_el += '<ul>';
+                                // 二级步骤
+                                if (log_content.step_info_list[i].inner_step_list.length > 0) {
+                                    for (var k = 0; k < log_content.step_info_list[i].inner_step_list.length; k++) {
+                                        step_el += '<li>  ' + log_content.step_info_list[i].inner_step_list[k].step_name + '</li>\n' +
+                                            '<li>&nbsp&nbsp 开始时间：' + log_content.step_info_list[i].inner_step_list[k].start_time + '</li>\n' +
+                                            '<li>&nbsp&nbsp 结束时间：' + log_content.step_info_list[i].inner_step_list[k].end_time + '</li>\n' +
+                                            '<li>&nbsp&nbsp 接口：<ul>';
+
+                                        for (var l = 0; l < log_content.step_info_list[i].inner_step_list[k].script_list_inner.length; l++) {
+                                            console.log(log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].script_text)
+                                            step_el += '<li>  ' + log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].script_name + '</li>\n' +
+                                                '<li>&nbsp&nbsp 开始时间：' + log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].start_time + '</li>\n' +
+                                                '<li>&nbsp&nbsp 结束时间：' + log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].end_time + '</li>\n' +
+                                                '<li>&nbsp&nbsp 状态：' + log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].state + '</li>\n' +
+                                                '<li>&nbsp&nbsp 脚本内容：<p>' + html_encode(log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].script_text) + '</p></li>\n' +
+                                                '<li>&nbsp&nbsp 执行结果：<p>' + html_encode(log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].explain) + '</li>';
+                                        }
+                                        step_el += '</ul></li>';
+                                    }
+                                }
+
+                                step_el += '</ul>';
+                            }
+                            step_el += '</ul>';
+                        }
+                        init += step_el;
+                        content_el.html(init);
+                    } else
+                        alert("加载日志失败，请于管理员联系。");
+                },
+                error: function (e) {
+                    alert("加载日志失败，请于管理员联系。");
+                }
+            });
+
+        });
+
+        function html_encode(str) {
+            var s = "";
+            if (str == null || str == undefined){
+                return ""
+            };
+            s = str.replace(/&/g, ">");
+            s = s.replace(/</g, "<");
+            s = s.replace(/>/g, ">");
+            s = s.replace(/ /g, " ");
+            s = s.replace(/\'/g, "'");
+            s = s.replace(/\"/g, '"');
+            s = s.replace(/\n/g, "<br>");
+            return s;
+        }
 
         $('#sample_1 tbody').on('click', 'button#delrow', function () {
             if (confirm("确定要删除该条数据？")) {

@@ -88,6 +88,8 @@
         <tr>
             <th> 任务ID</th>
             <th> 流程名称</th>
+            <th> 源机IP</th>
+            <th> 备机IP</th>
             <th> 启动人</th>
             <th> 状态</th>
             <th> 启动原因</th>
@@ -137,8 +139,9 @@
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>启动时间</label>
                                 <div class="col-md-10">
-                                    <input id="run_time" type="datetime" name="run_time" class="form-control" placeholder=""
-                                           readonly autocomplete="off" >
+                                    <input id="run_time" type="datetime" name="run_time" class="form-control"
+                                           placeholder=""
+                                           readonly autocomplete="off">
                                     <div class="form-control-focus"></div>
 
                                 </div>
@@ -219,7 +222,7 @@
                                 <label class="col-md-2 control-label"><span style="color:red; "></span>选择时间</label>
                                 <div class="col-md-4">
                                     <input id="backupset_edt" type="datetime" name="backupset_edt" class="form-control"
-                                           placeholder="" autocomplete="off" >
+                                           placeholder="" autocomplete="off">
                                     <div class="form-control-focus"></div>
                                 </div>
                                 <div class="col-md-2" hidden>
@@ -431,6 +434,27 @@
             启动流程中<img src="/static/new/images/loading.gif" alt="">
         </div>
     </div>
+
+    <div class="modal fade text-center" id="more_log_show" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg text-left" style="display: inline-block; width: 1000px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h1 class="modal-title" id="myModalLabel" align="center">流程日志</h1>
+                </div>
+                <div class="modal-body">
+
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block script %}

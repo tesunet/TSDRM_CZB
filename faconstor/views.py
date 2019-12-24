@@ -45,6 +45,8 @@ from .remote import ServerByPara
 from TSDRM import settings
 from .api import SQLApi
 from .CVApi import *
+from .tasks import format_cmd
+
 
 funlist = []
 
@@ -4028,8 +4030,9 @@ def oracle_restore_data(request):
         cursor = connection.cursor()
 
         exec_sql = """
-        select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
-        left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' and r.process_id = {0} order by r.starttime desc;
+        SELECT r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type, r.config 
+        FROM faconstor_processrun AS r 
+        LEFT JOIN faconstor_process AS p ON p.id = r.process_id WHERE r.state != '9' AND r.state != 'REJECT' AND r.process_id = {0} ORDER BY r.starttime DESC;
         """.format(process_id)
 
         cursor.execute(exec_sql)
@@ -4039,7 +4042,22 @@ def oracle_restore_data(request):
                 create_users = processrun_obj[2] if processrun_obj[2] else ""
                 create_user_objs = User.objects.filter(username=create_users)
                 create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
+                print(processrun_obj[10])
+                pri_host_ip, std_host_ip = "", ""
+                try:
+                    config = etree.XML(processrun_obj[10])
 
+                    std_param_els = config.xpath('//param')
+
+                    for std_param_el in std_param_els:
+                        variable_name = std_param_el.attrib.get("variable_name", "")
+                        if variable_name == 'pri_host_ip':
+                            pri_host_ip = std_param_el.attrib.get('param_value', "")
+                        if variable_name == 'std_host_ip':
+                            std_host_ip = std_param_el.attrib.get('param_value', "")
+                except Exception as e:
+                    print(e)
+                print(pri_host_ip, std_host_ip)
                 result.append({
                     "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
                     "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
@@ -4049,7 +4067,9 @@ def oracle_restore_data(request):
                     "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
                     "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
                     "process_name": processrun_obj[7] if processrun_obj[7] else "",
-                    "process_url": processrun_obj[8] if processrun_obj[8] else ""
+                    "process_url": processrun_obj[8] if processrun_obj[8] else "",
+                    "pri_host_ip": pri_host_ip,
+                    "std_host_ip": std_host_ip,
                 })
 
         return JsonResponse({"data": result})
@@ -5870,33 +5890,6 @@ def custom_pdf_report(request):
             end_time.strftime("%Y-%m-%d %H:%M:%S") if end_time else "")
 
         step_rto = get_process_run_rto(process_run_obj)
-        # all_step_runs = process_run_obj.steprun_set.exclude(state="9").exclude(step__rto_count_in="0").filter(
-        #     step__pnode=None)
-        # step_rto = 0
-        # if all_step_runs:
-        #     for step_run in all_step_runs:
-        #         rto = 0
-        #         end_time = step_run.endtime
-        #         start_time = step_run.starttime
-        #         if end_time and start_time:
-        #             delta_time = (end_time - start_time)
-        #             rto = delta_time.total_seconds()
-        #         step_rto += rto
-        #
-        # # 扣除子级步骤中可能的rto_count_in的时间
-        # all_inner_step_runs = process_run_obj.steprun_set.exclude(state="9").filter(
-        #     step__rto_count_in="0").exclude(
-        #     step__pnode=None)
-        # inner_rto_not_count_in = 0
-        # if all_inner_step_runs:
-        #     for inner_step_run in all_inner_step_runs:
-        #         end_time = inner_step_run.endtime
-        #         start_time = inner_step_run.starttime
-        #         if end_time and start_time:
-        #             delta_time = (end_time - start_time)
-        #             rto = delta_time.total_seconds()
-        #             inner_rto_not_count_in += rto
-        #             step_rto -= inner_rto_not_count_in
 
         m, s = divmod(step_rto, 60)
         h, m = divmod(m, 60)
@@ -7521,6 +7514,43 @@ def hosts_manage_del(request):
         return HttpResponseRedirect("/login")
 
 
+def hosts_manage_copy(request):
+    if request.user.is_authenticated():
+        host_id = request.POST.get("host_id", "")
+
+        try:
+            cur_host_manage = HostsManage.objects.get(id=int(host_id))
+        except:
+            return JsonResponse({
+                "ret": 0,
+                "info": "当前主机不存在。"
+            })
+        else:
+            try:
+                host = HostsManage()
+                host.host_ip = cur_host_manage.host_ip
+                host.host_name = cur_host_manage.host_name
+                host.os = cur_host_manage.os
+                host.type = cur_host_manage.type
+                host.username = cur_host_manage.username
+                host.password = cur_host_manage.password
+                host.host_type = cur_host_manage.host_type
+                host.config = cur_host_manage.config
+                host.save()
+            except:
+                return JsonResponse({
+                    "ret": 0,
+                    "info": "拷贝失败。"
+                })
+            else:
+                return JsonResponse({
+                    "ret": 1,
+                    "info": "拷贝成功。"
+                })
+    else:
+        return HttpResponseRedirect("/login")
+
+
 def serverconfig(request, funid):
     if request.user.is_authenticated():
         cvvendor = Vendor.objects.first()
@@ -8351,12 +8381,12 @@ def set_rec_config(request):
 
             # 生成配置文件
             if bcs_time:
-                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.{{nbdb2_file_fix}} taken at {bcs_time} redirect generate script {db_name}.txt'
+                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.{nbdb2_file_fix} taken at {bcs_time} redirect generate script {db_name}.txt'
                 """.format(std_profile=std_profile, db_name=db_name, nbu_install_path=nbu_install_path,
                            bcs_time=bcs_time,
                            redirect_file_path=redirect_file_path, nbdb2_file_fix=nbdb2_file_fix)
             else:
-                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.{{nbdb2_file_fix}} redirect generate script {db_name}.txt'
+                set_rec_config_cmd = """sh -c 'cd {redirect_file_path}&&db2 restore db {db_name} load {nbu_install_path}nbdb2.{nbdb2_file_fix} redirect generate script {db_name}.txt'
                 """.format(std_profile=std_profile, db_name=db_name, nbu_install_path=nbu_install_path,
                            redirect_file_path=redirect_file_path, nbdb2_file_fix=nbdb2_file_fix)
 
@@ -8393,7 +8423,7 @@ def set_rec_config(request):
                 """-- *****************************************************************************@@@-- *****************************************************************************""")
 
             com = re.compile(
-                """(Tablespace name[ ]+=[ ]+[a-z A-Z 0-9]+[\d\D]*?DEVICE[ ]+'[\d\D]*?'[ ]+\d+[\d\D]*?\);)"""
+                """(Tablespace name[ ]+=[ ]+[a-z A-Z 0-9 _]+[\d\D]*?[DEVICE FILE][ ]+'[\d\D]*?'[ ]+\d+[\d\D]*?\);)"""
             )
 
             whole_dict = {}
@@ -8402,7 +8432,7 @@ def set_rec_config(request):
             split_part_list = []
             # 1.拆分
             for f_part in f_parts:
-                if "DEVICE" in f_part:
+                if "DEVICE" in f_part or "FILE" in f_part:
                     # 2.截段
                     tmp_parts = com.findall(f_part)
 
@@ -8424,7 +8454,7 @@ def set_rec_config(request):
                             if "Tablespace name" in params_part:
                                 # 匹配表名
                                 space_com = re.compile(
-                                    "[\d\D]*?Tablespace name[ ]+=[ ]+([a-z A-Z 0-9]+)")
+                                    "[\d\D]*?Tablespace name[ ]+=[ ]+([a-z A-Z 0-9 _]+)")
                                 space_name = space_com.findall(params_part)[0] if space_com.findall(
                                     params_part) else ""
 
@@ -8443,7 +8473,22 @@ def set_rec_config(request):
                                     params_dict["pre_increasement"] = pre_increasement
 
                                     params_dict['actual_capacity'] = pre_actual_capacity
+                                    
+                            if "FILE" in params_part:
+                                device_com = re.compile("FILE[ ]+'([\d\D]*?)'[ ]+(\d+)")
+                                line_com = re.compile("(.*?FILE[ ]+'[\d\D]*?'[ ]+\d+)")
+                                params = device_com.findall(params_part)
+                                line_text = line_com.findall(params_part)
+                                for p in params:
+                                    device_path, capacity = p
+                                    params_dict["device_path"] = device_path
+                                    params_dict["capacity"] = capacity
+                                    # 包含device的行字符
 
+                                    params_dict["line_text"] = line_text[0].strip() if line_text else ""
+                                    params_dict["pre_increasement"] = pre_increasement
+
+                                    params_dict['actual_capacity'] = pre_actual_capacity
                             # 肯定是优先的
                             # 匹配 High water mark
                             if 'High water mark' in params_part:
@@ -8546,6 +8591,260 @@ def load_oracle_backupset(request):
 
         return JsonResponse({
             "data": dts_list
+        })
+    else:
+        return HttpResponseRedirect("/login")
+
+
+
+def more_log(request):
+    if request.user.is_authenticated():
+        processrun_id = request.POST.get("processrun_id", "")
+
+        # 构造数据
+        # 1.获取当前流程对象
+        try:
+            processrun_id = int(processrun_id)
+            process_run_obj = ProcessRun.objects.get(id=processrun_id)
+        except ProcessRun.DoesNotExist as e:
+            print(e)
+            return JsonResponse({
+                'ret': 0,
+                "data": "该流程不存在"
+            })
+        process_id = process_run_obj.process.id
+
+        log_dict = {}
+
+        # 2.报表封页文字
+        log_dict["title_xml"] = "Oracle自动化恢复流程"
+        log_dict["abstract_xml"] = "恢复日志"
+
+        # 3.章节名称
+        log_dict['ele_xml01'] = "一、切换概述"
+        log_dict['ele_xml02'] = "二、步骤详情"
+
+        # 4.构造第一章数据: first_el_dict
+        # 切换概述节点下内容,有序字典中存放
+
+        start_time = process_run_obj.starttime
+        end_time = process_run_obj.endtime
+        create_user = process_run_obj.creatuser
+        users = User.objects.filter(username=create_user)
+        if users:
+            create_user = users[0].userinfo.fullname
+        else:
+            create_user = ""
+        run_reason = process_run_obj.run_reason
+
+        log_dict["start_time"] = r"{0}".format(
+            start_time.strftime("%Y-%m-%d %H:%M:%S") if start_time else "")
+        log_dict["end_time"] = r"{0}".format(
+            end_time.strftime("%Y-%m-%d %H:%M:%S") if end_time else "")
+
+        log_dict["create_user"] = r"{0}".format(create_user) if create_user else ""
+
+        task_sign_obj = ProcessTask.objects.filter(processrun_id=processrun_id).exclude(state="9").filter(
+            type="SIGN")
+
+        if task_sign_obj:
+            receiveusers = ""
+            for task in task_sign_obj:
+                receiveuser = task.receiveuser
+
+                users = User.objects.filter(username=receiveuser)
+                if users:
+                    receiveuser = users[0].userinfo.fullname
+
+                if receiveuser:
+                    receiveusers += receiveuser + "、"
+
+            log_dict["receiveuser"] = r"{0}".format(receiveusers[:-1]) if receiveusers[:-1] else ""
+
+        all_steprun_objs = StepRun.objects.filter(processrun_id=processrun_id)
+        operators = ""
+        for steprun_obj in all_steprun_objs:
+            if steprun_obj.operator:
+                if steprun_obj.operator not in operators:
+                    users = User.objects.filter(username=steprun_obj.operator)
+                    if users:
+                        operator = users[0].userinfo.fullname
+                        if operator:
+                            if operator not in operators:
+                                operators += operator + "、"
+
+        log_dict["operator"] = r"{0}".format(operators[:-1]) if operators[:-1] else ""
+        log_dict["run_reason"] = r"{0}".format(run_reason) if run_reason else ""
+
+        # 主机IP/备机IP
+        config = etree.XML(process_run_obj.config)
+
+        param_els = config.xpath('//param')
+
+        pri_host_ip, std_host_ip = "", ""
+        for std_param_el in param_els:
+            variable_name = std_param_el.attrib.get("variable_name", "")
+            if variable_name == 'pri_host_ip':
+                pri_host_ip = std_param_el.attrib.get('param_value', "")
+            if variable_name == 'std_host_ip':
+                std_host_ip = std_param_el.attrib.get('param_value', "")
+        log_dict["pri_host_ip"] = pri_host_ip
+        log_dict["std_host_ip"] = std_host_ip
+
+        # 构造第二章数据: step_info_list
+        step_info_list = []
+        pnode_steplist = Step.objects.exclude(state="9").filter(process_id=process_id).order_by("sort").filter(
+            pnode_id=None)
+        for num, pstep in enumerate(pnode_steplist):
+            second_el_dict = dict()
+            step_name = "{0}.{1}".format(num + 1, pstep.name)
+            second_el_dict["step_name"] = step_name if step_name else ""
+
+            pnode_steprun = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id).filter(
+                step=pstep)
+
+            if pnode_steprun:
+                if pnode_steprun[0].step.rto_count_in == "0":
+                    second_el_dict["start_time"] = ""
+                    second_el_dict["end_time"] = ""
+                    second_el_dict["rto"] = ""
+                else:
+                    second_el_dict["start_time"] = pnode_steprun[0].starttime.strftime("%Y-%m-%d %H:%M:%S") if \
+                        pnode_steprun[0].starttime else ""
+                    second_el_dict["end_time"] = pnode_steprun[0].endtime.strftime(
+                        "%Y-%m-%d %H:%M:%S") if pnode_steprun[0].endtime else ""
+
+            # 步骤负责人
+            try:
+                users = User.objects.filter(username=pnode_steprun[0].operator) if pnode_steprun else []
+            except:
+                if users:
+                    operator = users[0].userinfo.fullname if users[0].userinfo.fullname else ""
+                    second_el_dict["operator"] = operator
+                else:
+                    second_el_dict["operator"] = ""
+
+            # 当前步骤下脚本
+            state_dict = {
+                "DONE": "已完成",
+                "EDIT": "未执行",
+                "RUN": "执行中",
+                "ERROR": "执行失败",
+                "IGNORE": "忽略",
+                "": "",
+            }
+
+            current_scripts = Script.objects.exclude(state="9").filter(step_id=pstep.id).order_by("sort")
+            script_list_wrapper = []
+            if current_scripts:
+                for snum, current_script in enumerate(current_scripts):
+                    script_el_dict = dict()
+                    # title
+                    script_name = "{0}.{1}".format("i" * (snum + 1), current_script.name)
+                    script_el_dict["script_name"] = script_name
+                    # content
+                    steprun_id = pnode_steprun[0].id if pnode_steprun else None
+                    script_id = current_script.id
+                    current_scriptrun_obj = ScriptRun.objects.filter(steprun_id=steprun_id, script_id=script_id)
+                    if current_scriptrun_obj.exists():
+                        current_scriptrun_obj = current_scriptrun_obj[0]
+
+                        state = current_scriptrun_obj.state
+                        if state in state_dict.keys():
+                            script_el_dict["state"] = state_dict[state]
+                        else:
+                            script_el_dict["state"] = ""
+                        script_el_dict["explain"] = current_scriptrun_obj.explain
+                        script_text = ""
+                        try:
+                            script_text = format_cmd(current_script.script_text, process_run_obj)
+                        except:
+                            pass
+                        script_el_dict["script_text"] = r"%s"%script_text
+
+                    script_list_wrapper.append(script_el_dict)
+            second_el_dict["script_list_wrapper"] = script_list_wrapper
+
+            # 子步骤下相关内容
+            p_id = pstep.id
+            inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id).order_by("sort").filter(
+                pnode_id=p_id)
+
+            inner_step_list = []
+            if inner_steps:
+                for num, step in enumerate(inner_steps):
+                    inner_second_el_dict = dict()
+                    step_name = "{0}){1}".format(num + 1, step.name)
+                    inner_second_el_dict["step_name"] = step_name
+                    steprun_obj = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id).filter(
+                        step=step)
+                    if steprun_obj:
+                        steprun_obj = steprun_obj[0]
+                        if steprun_obj.step.rto_count_in == "0":
+                            inner_second_el_dict["start_time"] = ""
+                            inner_second_el_dict["end_time"] = ""
+                        else:
+                            inner_second_el_dict["start_time"] = steprun_obj.starttime.strftime("%Y-%m-%d %H:%M:%S") if \
+                                steprun_obj.starttime else ""
+                            inner_second_el_dict["end_time"] = steprun_obj.endtime.strftime(
+                                "%Y-%m-%d %H:%M:%S") if steprun_obj.endtime else ""
+
+                        # 步骤负责人
+                        users = User.objects.filter(username=steprun_obj.operator)
+                        if users:
+                            operator = users[0].userinfo.fullname
+                            inner_second_el_dict["operator"] = operator
+                        else:
+                            inner_second_el_dict["operator"] = ""
+
+                        # 当前步骤下脚本
+                        current_scripts = Script.objects.exclude(state="9").filter(step_id=step.id).order_by("sort")
+
+                        script_list_inner = []
+                        if current_scripts:
+                            for snum, current_script in enumerate(current_scripts):
+                                script_el_dict_inner = dict()
+                                # title
+                                script_name = "{0}.{1}".format("i" * (snum + 1), current_script.name)
+                                script_el_dict_inner["script_name"] = script_name
+
+                                # content
+                                steprun_id = steprun_obj.id
+                                script_id = current_script.id
+                                current_scriptrun_obj = ScriptRun.objects.filter(steprun_id=steprun_id,
+                                                                                 script_id=script_id)
+                                if current_scriptrun_obj:
+                                    current_scriptrun_obj = current_scriptrun_obj[0]
+                                    script_el_dict_inner["start_time"] = current_scriptrun_obj.starttime.strftime(
+                                        "%Y-%m-%d %H:%M:%S") if current_scriptrun_obj.starttime else ""
+                                    script_el_dict_inner["end_time"] = current_scriptrun_obj.endtime.strftime(
+                                        "%Y-%m-%d %H:%M:%S") if current_scriptrun_obj.endtime else ""
+
+                                    state = current_scriptrun_obj.state
+                                    if state in state_dict.keys():
+                                        script_el_dict_inner["state"] = state_dict[state]
+                                    else:
+                                        script_el_dict_inner["state"] = ""
+
+                                    script_el_dict_inner["explain"] = current_scriptrun_obj.explain
+                                    script_text = ""
+                                    try:
+                                        script_text = format_cmd(current_script.script_text, process_run_obj)
+                                    except:
+                                        pass
+                                    script_el_dict_inner["script_text"] = r"%s"%script_text
+                                else:
+                                    pass
+                                script_list_inner.append(script_el_dict_inner)
+                        inner_second_el_dict["script_list_inner"] = script_list_inner
+                    inner_step_list.append(inner_second_el_dict)
+            second_el_dict['inner_step_list'] = inner_step_list
+            step_info_list.append(second_el_dict)
+        log_dict['step_info_list'] = step_info_list
+
+        return JsonResponse({
+            "ret": 1,
+            "data": log_dict
         })
     else:
         return HttpResponseRedirect("/login")

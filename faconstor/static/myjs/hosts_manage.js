@@ -23,7 +23,9 @@ $(document).ready(function () {
             "targets": -1,
             "data": null,
             "width": "100px",
-            "defaultContent": "<button  id='edit' title='编辑' data-toggle='modal'  data-target='#static'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>"
+            "defaultContent": "<button title='拷贝'  id='copy' class='btn btn-xs btn-primary' type='button'><i class='fa fa-copy'></i></button>" +
+                "<button  id='edit' title='编辑' data-toggle='modal'  data-target='#static'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button>" +
+                "<button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>"
         }],
         "oLanguage": {
             "sLengthMenu": "每页显示 _MENU_ 条记录",
@@ -50,6 +52,29 @@ $(document).ready(function () {
             $.ajax({
                 type: "POST",
                 url: "../hosts_manage_del/",
+                data: {
+                    host_id: data.host_id,
+                },
+                success: function (data) {
+                    if (data.ret == 1) {
+                        table.ajax.reload();
+                    }
+                    alert(data.info);
+                },
+                error: function (e) {
+                    alert("删除失败，请于管理员联系。");
+                }
+            });
+
+        }
+    });
+    $('#hosts_dt tbody').on('click', 'button#copy', function () {
+        if (confirm("确定要拷贝该条数据？")) {
+            var table = $('#hosts_dt').DataTable();
+            var data = table.row($(this).parents('tr')).data();
+            $.ajax({
+                type: "POST",
+                url: "../hosts_manage_copy/",
                 data: {
                     host_id: data.host_id,
                 },
@@ -301,7 +326,7 @@ $(document).ready(function () {
             $('#param_se').append(
                 '<option value="nbu_install_path">NBU安装目录: </option>' + '\n' +
                 '<option value="redirect_path">重定向路径: </option>' + '\n' +
-                '<option value="oracle_user">oracle用户名: </option>' 
+                '<option value="oracle_user">oracle用户名: </option>'
             )
         }
     })

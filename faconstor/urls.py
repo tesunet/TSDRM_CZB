@@ -58,6 +58,7 @@ urlpatterns = [
     url(r'^host_save/$', host_save),
     url(r'^hosts_manage_data/$', hosts_manage_data),
     url(r'^hosts_manage_del/$', hosts_manage_del),
+    url(r'^hosts_manage_copy/$', hosts_manage_copy),
 
     # 预案管理
     url(r'^script/$', script, {'funid': '32'}),
@@ -174,4 +175,5 @@ urlpatterns = [
     url(r'^load_backupset/$', load_backupset),
     url(r'^load_oracle_backupset/$', load_oracle_backupset),
     url(r'^set_rec_config/$', set_rec_config),
+    url(r'^more_log/$', more_log),
 ]

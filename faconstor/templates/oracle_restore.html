@@ -88,6 +88,8 @@
         <tr>
             <th> 任务ID</th>
             <th> 流程名称</th>
+            <th> 源机IP</th>
+            <th> 备机IP</th>
             <th> 启动人</th>
             <th> 状态</th>
             <th> 启动原因</th>
@@ -227,11 +229,12 @@
                                 </div>
                                 <div class="col-md-5"></div>
                             </div>
-                            <div  hidden class="form-group" id='backupsetname_div'>
+                            <div hidden class="form-group" id='backupsetname_div'>
 
                                 <label class="col-md-2 control-label"><span style="color:red; "></span>备份集</label>
                                 <div class="col-md-10">
-                                    <input  readonly id="backupsetname" type="text" name="backupsetname" class="form-control"
+                                    <input readonly id="backupsetname" type="text" name="backupsetname"
+                                           class="form-control"
                                            placeholder="">
                                     <div class="form-control-focus"></div>
                                 </div>
@@ -408,6 +411,25 @@
         <div class='modal-dialog'
              style="font-size:25px;color:grey;width: 400px;position: absolute; height:100px;left: 55%; top: 38%;margin-left:-200px;margin-top:-100px;">
             启动流程中<img src="/static/new/images/loading.gif" alt="">
+        </div>
+    </div>
+    <div class="modal fade text-center" id="more_log_show" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg text-left" style="display: inline-block; width: 1000px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h1 class="modal-title" id="myModalLabel" align="center">流程日志</h1>
+                </div>
+                <div class="modal-body">
+
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}

@@ -126,12 +126,12 @@ class ServerByPara(object):
                     print(e)
                     exec_tag = 0  # 不抛错
                     log = "编码错误"
-                    data_init = "编码错误"
+                    data_init = "编码错误 %s" % e
         except socket.timeout as e:
             print("脚本执行超时")
             return {
                 "exec_tag": 1,
-                "data": "脚本执行超时",
+                "data": "脚本执行超时 %s" % e,
                 "log": "脚本执行超时",
             }
 
@@ -181,15 +181,15 @@ class ServerByPara(object):
                 exec_tag = 0
                 try:
                     data_init = str(ret.std_out, encoding='gbk')
-                    if data_init:
-                        data_init = "".join(data_init.split("\r\n"))
+                    #if data_init:
+                    #    data_init = "".join(data_init.split("\r\n"))
                     # for data in ret.std_out.decode().split("\r\n"):
                     #     data_init += data
                 except Exception as e:
                     print(e)
                     exec_tag = 0  # 不抛错
                     log = "编码错误"
-                    data_init = "编码错误"
+                    data_init = "编码错误 %s" % e
                 else:
                     if succeedtext is not None:
                         if succeedtext not in data_init:
@@ -224,11 +224,11 @@ if __name__ == '__main__':
     # server_obj = ServerByPara(
     #     r"su - db2inst1&&cd /home/db2inst1&&db2 restore db tesudb load /usr/openv/netbackup/bin/nbdb2.so64 taken at 20191205214326 redirect generate script tesudb.txt",
     #     "192.168.100.65", "root", "tesunet@2019", "Linux")
-    server_obj = ServerByPara(
-        r"su - db2inst1 -c 'echo test'",
-        "192.168.100.65", "root", "tesunet@2019", "Linux")
     # server_obj = ServerByPara(
-    #     r"su - miaokela&cd /home/miaokela/Desktop&&touch 1.txt", "192.168.184.100", "root", "password", "Linux")
+    #     r"su - db2inst1 -c 'echo test'",
+    #     "192.168.100.65", "root", "tesunet@2019", "Linux")
+    server_obj = ServerByPara(
+        r"su - miaokela&cd /home/miaokela/Desktop&&touch 1.txt", "192.168.184.100", "root", "password", "Linux")
     # linux_temp_script_file = r"/tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh"
     # cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
     # print(cmd)  # sed -i 's/\r$//' /tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh

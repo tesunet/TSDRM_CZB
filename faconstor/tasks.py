@@ -247,7 +247,7 @@ def force_exec_script(processrunid):
                         #   先判断文件是否存在，再  #
                         #   mkdir/md path 创建文件 #
                         ############################
-                        linux_temp_script_path = "/tmp/drm/{processrunid}".format(
+                        linux_temp_script_path = "/tmp/{processrunid}".format(
                             **{"processrunid": processrun.id})
                         mkdir_cmd = "mkdir -p {linux_temp_script_path}".format(
                             **
@@ -468,7 +468,7 @@ def runstep(steprun, if_repeat=False):
                         #   先判断文件是否存在，再  #
                         #   mkdir/md path 创建文件 #
                         ############################
-                        linux_temp_script_path = "/tmp/drm/{processrunid}".format(
+                        linux_temp_script_path = "/tmp/{processrunid}".format(
                             **{"processrunid": processrun.id})
                         mkdir_cmd = "mkdir -p {linux_temp_script_path}".format(
                             **
@@ -955,6 +955,28 @@ def exec_process(processrunid, if_repeat=False):
 
         processrun.rto = delta_time
         processrun.save()
+
+        # 流程结束后删除流程脚本文件
+        try:
+            config = etree.XML(processrun.config)
+
+            std_param_els = config.xpath('//param')
+            std_host_ip, std_host_username, std_host_passwd, std_host_system = "", "", "", ""
+            for std_param_el in std_param_els:
+                variable_name = std_param_el.attrib.get("variable_name", "")
+                if variable_name == 'std_host_ip':
+                    std_host_ip = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_username':
+                    std_host_username = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_passwd':
+                    std_host_passwd = std_param_el.attrib.get('param_value', "")
+                if variable_name == 'std_host_system':
+                    std_host_system = std_param_el.attrib.get('param_value', "")
+            del_cmd = """if [ -d '/tmp/{processrun_id}' ];then cd /tmp&&rm {processrun_id} -rf; fi""".format(processrun_id=processrun.id)
+            server_obj = ServerByPara(r"{0}".format(del_cmd), std_host_ip, std_host_username, std_host_passwd, std_host_system)
+            result = server_obj.run("")
+        except Exception as e:
+            print(e)
 
 
 @shared_task

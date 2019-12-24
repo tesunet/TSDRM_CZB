@@ -114,7 +114,7 @@ SET TABLESPACE CONTAINERS FOR 5
 -- IGNORE ROLLFORWARD CONTAINER OPERATIONS
 USING (
   FILE '/home/db2inst1/tesudb_test/raw2'                                                    2160
-
+, FILE '/home/db2inst1/tesudb_test/raw3'                                                    2160
 );
 -- *****************************************************************************
 -- ** start redirected restore
