@@ -125,7 +125,6 @@
                                             '<li>&nbsp&nbsp 接口：<ul>';
 
                                         for (var l = 0; l < log_content.step_info_list[i].inner_step_list[k].script_list_inner.length; l++) {
-                                            console.log(log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].script_text)
                                             step_el += '<li>  ' + log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].script_name + '</li>\n' +
                                                 '<li>&nbsp&nbsp 开始时间：' + log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].start_time + '</li>\n' +
                                                 '<li>&nbsp&nbsp 结束时间：' + log_content.step_info_list[i].inner_step_list[k].script_list_inner[l].end_time + '</li>\n' +

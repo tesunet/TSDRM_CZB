@@ -8563,7 +8563,7 @@ def load_oracle_backupset(request):
                     dts_list = []
                     if result['exec_tag'] == 0:
                         #com = re.compile("{db_name}/[a-z A-Z 0-9]+/(\d+)/".format(db_name=db_name.upper()))
-                        com = re.compile('.*?\d+[ ]+(.*?)[ ]+\/(ctrl_.+)')
+                        com = re.compile('.*?\d+[ ]+(.*?)[ ]+\/(.*?trl_.+)')
                         ret_list = list(set(com.findall(result["data"])))
 
                         pre_bks_time = ""

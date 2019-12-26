@@ -273,6 +273,10 @@ def force_exec_script(processrunid):
                         tmp_cmd = r"cat > {0} << \EOH".format(
                             linux_temp_script_file
                         ) + "\n" + script.script.script_text + "\nEOH"
+
+                        if system_tag == "AIX":
+                            tmp_cmd = tmp_cmd.replace('#!/bin/sh', '#!/bin/ksh' + '\n' + '. ~/.profile&&').replace('#!/bin/bash', '#!/bin/ksh' + '\n' + '. ~/.profile&&')
+
                         tmp_obj = remote.ServerByPara(tmp_cmd, ip, username,
                                                       password, system_tag)
                         tmp_result = tmp_obj.run("")
@@ -503,8 +507,13 @@ def runstep(steprun, if_repeat=False):
                         linux_temp_script_name = "tmp_script_{scriptrun_id}.sh".format(**{"scriptrun_id": script.id})
                         linux_temp_script_file = linux_temp_script_path + "/" + linux_temp_script_name
 
+ 
+
                         tmp_cmd = r"cat > {0} << \EOH".format(
                             linux_temp_script_file) + "\n" + script.script.script_text + "\nEOH"
+
+                        if system_tag == "AIX":
+                            tmp_cmd = tmp_cmd.replace('#!/bin/sh', '#!/bin/ksh' + '\n' + '. ~/.profile&&').replace('#!/bin/bash', '#!/bin/ksh' + '\n' + '. ~/.profile&&')
 
                         # Linux上传脚本时，修改cmd
                         tmp_cmd = format_cmd(tmp_cmd, processrun)
