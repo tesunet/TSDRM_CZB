@@ -2714,6 +2714,12 @@ def processscriptsave(request):
 
             script_sort = request.POST.get('script_sort', '')
 
+            exec_host = request.POST.get('exec_host', '')
+            try:
+                exec_host = int(exec_host)
+            except:
+                pass
+
             # 定义存储的方法
             def process_script_save(save_data):
                 result = {}
@@ -2748,6 +2754,7 @@ def processscriptsave(request):
                                 scriptsave.commv_interface = ""
 
                             scriptsave.step_id = save_data["pid"]
+                            scriptsave.exec_host = save_data["exec_host"]
                             scriptsave.interface_type = save_data["interface_type"]
                             scriptsave.save()
                             result["res"] = "新增成功。"
@@ -2799,6 +2806,7 @@ def processscriptsave(request):
                                     scriptsave.origin_id = None
                                     scriptsave.commv_interface = ""
 
+                                scriptsave.exec_host = save_data["exec_host"]
                                 scriptsave.interface_type = save_data["interface_type"]
                                 scriptsave.save()
                                 result["res"] = "修改成功。"
@@ -2858,7 +2866,8 @@ def processscriptsave(request):
                                     "interface_type": interface_type,
                                     "origin": origin,
                                     "commv_interface": commv_interface,
-                                    "script_sort": script_sort
+                                    "script_sort": script_sort,
+                                    "exec_host": exec_host,
                                 }
 
                                 if interface_type == "commvault":
@@ -2968,7 +2977,8 @@ def get_script_data(request):
                     "origin": cur_script.origin.id if cur_script.origin else "",
                     "commv_interface": cur_script.commv_interface,
 
-                    "script_sort": cur_script.sort
+                    "script_sort": cur_script.sort,
+                    "exec_host": cur_script.exec_host
                 }
             return HttpResponse(json.dumps(script_data))
 
@@ -4042,7 +4052,6 @@ def oracle_restore_data(request):
                 create_users = processrun_obj[2] if processrun_obj[2] else ""
                 create_user_objs = User.objects.filter(username=create_users)
                 create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
-                print(processrun_obj[10])
                 pri_host_ip, std_host_ip = "", ""
                 try:
                     config = etree.XML(processrun_obj[10])
@@ -4057,7 +4066,6 @@ def oracle_restore_data(request):
                             std_host_ip = std_param_el.attrib.get('param_value', "")
                 except Exception as e:
                     print(e)
-                print(pri_host_ip, std_host_ip)
                 result.append({
                     "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
                     "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",

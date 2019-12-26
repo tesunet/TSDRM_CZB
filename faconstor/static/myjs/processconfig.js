@@ -254,7 +254,7 @@ function customTree() {
                                         $("#scriptid").val(data.id);
                                         $("#scriptcode").val(data.code);
                                         $("#script_name").val(data.name);
-
+                                        $("#exec_host_id").val(data.exec_host);
                                         // 判断是否为commvault
                                         if (data.interface_type == "commvault") {
                                             $("#script_text_div").hide();
@@ -262,12 +262,14 @@ function customTree() {
                                             $("#log_address_div").hide();
                                             $("#origin_div").show();
                                             $("#commv_interface_div").show();
+                                            $("#exec_host_div").hide();
                                         } else {
                                             $("#script_text_div").show();
                                             $("#success_text_div").show();
                                             $("#log_address_div").show();
                                             $("#origin_div").hide();
                                             $("#commv_interface_div").hide();
+                                            $("#exec_host_div").show();
                                         }
 
                                         $("#script_text").val(data.script_text);
@@ -445,12 +447,14 @@ function customTree() {
                     $("#log_address_div").hide();
                     $("#origin_div").show();
                     $("#commv_interface_div").show();
+                    $("#exec_host_div").hide();
                 } else {
                     $("#script_text_div").show();
                     $("#success_text_div").show();
                     $("#log_address_div").show();
                     $("#origin_div").hide();
                     $("#commv_interface_div").hide();
+                    $("#exec_host_div").show();
                 }
             });
 
@@ -526,7 +530,9 @@ $('#scriptsave').click(function () {
             origin: $("#origin").val(),
             commv_interface: $("#commv_interface").val(),
 
-            script_sort: $("#script_sort").val()
+            script_sort: $("#script_sort").val(),
+
+            exec_host: $("#exec_host_id").val()
         },
         success: function (data) {
             var myres = data["res"];

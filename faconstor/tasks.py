@@ -210,19 +210,30 @@ def force_exec_script(processrunid):
             # 备机服务器账户信息
             config = etree.XML(processrun.config)
 
-            std_param_els = config.xpath('//std_param_list/param')
+            param_els = config.xpath('//param')
 
-            ip, username, password, system_tag = "", "", "", ""
-            for std_param_el in std_param_els:
-                variable_name = std_param_el.attrib.get("variable_name", "")
+            pri_ip, pri_username, pri_password, pri_system_tag = "", "", "", ""
+            std_ip, std_username, std_password, std_system_tag = "", "", "", ""
+            for param_el in param_els:
+                variable_name = param_el.attrib.get("variable_name", "")
                 if variable_name == 'std_host_ip':
-                    ip = std_param_el.attrib.get('param_value', "")
+                    std_ip = param_el.attrib.get('param_value', "")
                 if variable_name == 'std_host_username':
-                    username = std_param_el.attrib.get('param_value', "")
+                    std_username = param_el.attrib.get('param_value', "")
                 if variable_name == 'std_host_passwd':
-                    password = std_param_el.attrib.get('param_value', "")
+                    std_password = param_el.attrib.get('param_value', "")
                 if variable_name == 'std_host_system':
-                    system_tag = std_param_el.attrib.get('param_value', "")
+                    std_system_tag = param_el.attrib.get('param_value', "")
+
+                if variable_name == 'pri_host_ip':
+                    pri_ip = param_el.attrib.get('param_value', "")
+                if variable_name == 'pri_host_username':
+                    pri_username = param_el.attrib.get('param_value', "")
+                if variable_name == 'pri_host_passwd':
+                    pri_password = param_el.attrib.get('param_value', "")
+                if variable_name == 'pri_host_system':
+                    pri_system_tag = param_el.attrib.get('param_value', "")
+
 
             all_step_runs = processrun.steprun_set.exclude(
                 step__state="9").filter(step__force_exec=1)
@@ -233,6 +244,24 @@ def force_exec_script(processrunid):
                     script.result = ""
                     script.state = "RUN"
                     script.save()
+
+                    ip, username, password, system_tag = "", "", "", ""
+                    # 脚本所在主机ip/ username/ password/ system_tag
+                    exec_host = script.script.exec_host
+                    if exec_host == 1:
+                        # 源机
+                        ip = pri_ip
+                        username = pri_username
+                        password = pri_password
+                        system_tag = pri_system_tag
+                        print('**********************************************')
+                    else:
+                        # 备机
+                        ip = std_ip
+                        username = std_username
+                        password = std_password
+                        system_tag = std_system_tag
+
 
                     # # HostsManage
                     # cur_host_manage = script.script.hosts_manage
@@ -396,19 +425,29 @@ def runstep(steprun, if_repeat=False):
     # 备机服务器账户信息
     config = etree.XML(processrun.config)
 
-    std_param_els = config.xpath('//std_param_list/param')
+    param_els = config.xpath('//param')
 
-    ip, username, password, system_tag = "", "", "", ""
-    for std_param_el in std_param_els:
-        variable_name = std_param_el.attrib.get("variable_name", "")
+    pri_ip, pri_username, pri_password, pri_system_tag = "", "", "", ""
+    std_ip, std_username, std_password, std_system_tag = "", "", "", ""
+    for param_el in param_els:
+        variable_name = param_el.attrib.get("variable_name", "")
         if variable_name == 'std_host_ip':
-            ip = std_param_el.attrib.get('param_value', "")
+            std_ip = param_el.attrib.get('param_value', "")
         if variable_name == 'std_host_username':
-            username = std_param_el.attrib.get('param_value', "")
+            std_username = param_el.attrib.get('param_value', "")
         if variable_name == 'std_host_passwd':
-            password = std_param_el.attrib.get('param_value', "")
+            std_password =param_el.attrib.get('param_value', "")
         if variable_name == 'std_host_system':
-            system_tag = std_param_el.attrib.get('param_value', "")
+            std_system_tag = param_el.attrib.get('param_value', "")
+
+        if variable_name == 'pri_host_ip':
+            pri_ip = param_el.attrib.get('param_value', "")
+        if variable_name == 'pri_host_username':
+            pri_username = param_el.attrib.get('param_value', "")
+        if variable_name == 'pri_host_passwd':
+            pri_password = param_el.attrib.get('param_value', "")
+        if variable_name == 'pri_host_system':
+            pri_system_tag = param_el.attrib.get('param_value', "")
 
     if processrun.state == "RUN" or processrun.state == "ERROR":
         # 将错误流程改成RUN
@@ -446,6 +485,7 @@ def runstep(steprun, if_repeat=False):
                             return 0
                         if childreturn == 2:
                             return 2
+
             scriptruns = steprun.scriptrun_set.exclude(Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
             for script in scriptruns:
                 # 目的：不在服务器存放脚本；
@@ -455,6 +495,22 @@ def runstep(steprun, if_repeat=False):
                 script.result = ""
                 script.state = "RUN"
                 script.save()
+
+                ip, username, password, system_tag = "", "", "", ""
+                # 脚本所在主机ip/ username/ password/ system_tag
+                exec_host = script.script.exec_host
+                if exec_host == 1:
+                    # 源机
+                    ip = pri_ip
+                    username = pri_username
+                    password = pri_password
+                    system_tag = pri_system_tag
+                else:
+                    # 备机
+                    ip = std_ip
+                    username = std_username
+                    password = std_password
+                    system_tag = std_system_tag
 
                 script_name = script.script.name if script.script.name else ""
 

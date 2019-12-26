@@ -199,6 +199,11 @@ class Script(models.Model):
                                        blank=True,
                                        null=True,
                                        max_length=64)
+    exec_host_choices = (
+        (1, "源机"),
+        (2, "备机")
+    )
+    exec_host = models.IntegerField('执行主机', choices=exec_host_choices,blank=True, null=True, default=2)
 
 
 class ProcessRun(models.Model):
